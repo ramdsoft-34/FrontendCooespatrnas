@@ -1,0 +1,650 @@
+/* frontend/src/components/MapaRecorrido.module.css */
+
+/* Animación de pulso para el indicador en vivo */
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.3);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Animación de radar */
+@keyframes radar {
+  0% {
+    transform: scale(0.5);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+
+/* Animación de rotación para refresh */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Animación de entrada desde la derecha */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Container principal */
+.mapaContainer {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+.mapaContainer.expandido {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  right: 20px;
+  bottom: 20px;
+  z-index: 1000;
+  border-radius: 20px;
+}
+
+/* Header del mapa */
+.mapaHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.headerIcon {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.liveIndicator {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 12px;
+  height: 12px;
+  background: #22c55e;
+  border-radius: 50%;
+  border: 2px solid white;
+  animation: pulse 1.5s infinite;
+}
+
+.headerText h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.headerText p {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.liveBadge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: white;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.4);
+}
+
+.liveDot {
+  width: 6px;
+  height: 6px;
+  background: white;
+  border-radius: 50%;
+  animation: pulse 1s infinite;
+}
+
+.refreshBtn,
+.expandBtn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: white;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.refreshBtn:hover,
+.expandBtn:hover {
+  background: #f1f5f9;
+  color: #3b82f6;
+  transform: translateY(-1px);
+}
+
+.refreshBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+/* Wrapper del mapa */
+.mapaWrapper {
+  position: relative;
+  height: 350px;
+}
+
+.mapaContainer.expandido .mapaWrapper {
+  height: calc(100% - 180px);
+}
+
+.leafletMap {
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+/* Overlay de carga */
+.loadingOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  gap: 12px;
+}
+
+.loadingSpinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.loadingOverlay p {
+  color: #64748b;
+  font-size: 14px;
+}
+
+/* Error overlay */
+.errorOverlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  padding: 20px 30px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  text-align: center;
+  z-index: 10;
+}
+
+.errorOverlay p {
+  color: #ef4444;
+  margin-bottom: 12px;
+}
+
+.errorOverlay button {
+  padding: 8px 20px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+/* Panel de estadísticas */
+.statsPanel {
+  display: flex;
+  align-items: center;
+  padding: 16px 20px;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  gap: 8px;
+  overflow-x: auto;
+}
+
+.statItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: white;
+  border-radius: 10px;
+  min-width: fit-content;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.statIcon {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #eff6ff, #dbeafe);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #3b82f6;
+}
+
+.statContent {
+  display: flex;
+  flex-direction: column;
+}
+
+.statLabel {
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.statValue {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.statDivider {
+  width: 1px;
+  height: 40px;
+  background: #e2e8f0;
+  margin: 0 4px;
+}
+
+.statusBadge {
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.statusBadge.active {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.statusBadge.inactive {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+/* Controles flotantes del mapa */
+.mapControls {
+  position: absolute;
+  bottom: 80px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 5;
+}
+
+.controlBtn {
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: white;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
+}
+
+.controlBtn:hover {
+  background: #f1f5f9;
+  color: #3b82f6;
+}
+
+.controlBtn.active {
+  background: #3b82f6;
+  color: white;
+}
+
+/* Popups del mapa */
+.popupContent {
+  padding: 8px;
+}
+
+.popupHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  color: #1e293b;
+}
+
+.popupInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.popupInfo span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ===============================
+   PANEL DE COORDENADAS FLOTANTE
+   =============================== */
+
+.panelCoordenadas {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  z-index: 500;
+  min-width: 280px;
+  animation: slideInRight 0.3s ease-out;
+}
+
+.coordenadasHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.coordenadasContent {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.coordenadaItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.coordenadaLabel {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.coordenadaValor {
+  font-size: 14px;
+  color: #1e293b;
+  font-weight: 600;
+  font-family: 'Courier New', monospace;
+  background: #f1f5f9;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+/* ===============================
+   FLECHAS DIRECCIONALES
+   =============================== */
+
+:global(.flecha-direccional) {
+  background: transparent !important;
+  border: none !important;
+  pointer-events: none;
+}
+
+/* ===============================
+   MAPA INACTIVO
+   =============================== */
+
+.mapaInactivo {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 16px;
+  padding: 40px;
+  min-height: 350px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.inactivoContent {
+  text-align: center;
+  max-width: 400px;
+}
+
+.inactivoIconWrapper {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.inactivoIconBg {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  z-index: 2;
+  position: relative;
+}
+
+.radarRing {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border: 2px solid #cbd5e1;
+  border-radius: 50%;
+  animation: radar 3s ease-out infinite;
+}
+
+.inactivoText h3 {
+  margin: 0 0 8px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.inactivoText p {
+  margin: 0;
+  font-size: 14px;
+  color: #94a3b8;
+  line-height: 1.5;
+}
+
+/* Estilos adicionales para marcadores de puntos GPS */
+/* Agregar al final de MapaRecorrido.module.css */
+
+/* Marcadores de puntos GPS */
+:global(.gps-point-marker) {
+  background: transparent !important;
+  border: none !important;
+}
+
+/* Animación sutil para los marcadores GPS */
+:global(.gps-point-marker) > div {
+  animation: gps-pulse 2s ease-in-out infinite;
+}
+
+@keyframes gps-pulse {
+  0%, 100% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+/* Efecto hover en los marcadores GPS */
+:global(.gps-point-marker):hover > div {
+  transform: scale(1.5) !important;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.4) !important;
+  cursor: pointer;
+}
+
+.inactivoStats {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 24px;
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.inactivoStat {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #64748b;
+}
+
+.inactivoStat svg {
+  color: #94a3b8;
+}
+
+.inactivoStat div {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.inactivoStat strong {
+  font-size: 16px;
+  color: #475569;
+}
+
+.inactivoStat span {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.inactivoStatDivider {
+  width: 1px;
+  height: 40px;
+  background: #e2e8f0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .mapaHeader {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  
+  .headerRight {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  
+  .statsPanel {
+    flex-wrap: nowrap;
+    padding: 12px;
+    gap: 6px;
+  }
+  
+  .statItem {
+    padding: 6px 10px;
+  }
+  
+  .statIcon {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .inactivoStats {
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .inactivoStatDivider {
+    width: 40px;
+    height: 1px;
+  }
+
+  .panelCoordenadas {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+    min-width: auto;
+  }
+}

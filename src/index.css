@@ -1,0 +1,21 @@
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+      'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+      sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* 👇 Aseguramos que html y body permitan scroll vertical */
+  html, body {
+    height: auto;         /* que la altura crezca según el contenido */
+    min-height: 100vh;    /* al menos ocupar toda la pantalla */
+    overflow-y: auto;     /* habilitar scroll vertical */
+    overflow-x: hidden;   /* bloquear scroll horizontal */
+  }
+
+  code {
+    font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+      monospace;
+  }

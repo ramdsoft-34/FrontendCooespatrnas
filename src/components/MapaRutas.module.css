@@ -1,0 +1,435 @@
+/* MapaRutas.module.css */
+
+.mapaContainer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+}
+
+.mapaHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #fafafa;
+}
+
+.mapaInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mapaInfo svg {
+  color: #6b7280;
+  flex-shrink: 0;
+}
+
+.mapaInfo h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.mapaInfo p {
+  margin: 0;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.mapaControles {
+  display: flex;
+  gap: 8px;
+}
+
+.centrarButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.centrarButton:hover {
+  background: #2563eb;
+  transform: translateY(-1px);
+}
+
+.centrarButton:active {
+  transform: translateY(0);
+}
+
+.generarRutaButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: #059669;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 120px;
+  justify-content: center;
+}
+
+.generarRutaButton:hover:not(:disabled) {
+  background: #047857;
+  transform: translateY(-1px);
+}
+
+.generarRutaButton:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.generarRutaButton:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.limpiarRutaButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.limpiarRutaButton:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+}
+
+.limpiarRutaButton:active {
+  transform: translateY(0);
+}
+
+.mapaWrapper {
+  position: relative;
+  flex: 1;
+  min-height: 400px;
+}
+
+.mapa {
+  width: 100%;
+  height: 100%;
+}
+
+.cargandoOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(2px);
+  z-index: 10;
+}
+
+.cargandoOverlay p {
+  margin: 8px 0 0 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.sinClientesOverlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  backdrop-filter: blur(4px);
+  z-index: 5;
+}
+
+.sinClientesOverlay p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.errorOverlay {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: rgba(254, 242, 242, 0.95);
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  backdrop-filter: blur(4px);
+  z-index: 15;
+  max-width: 300px;
+}
+
+.errorOverlay p {
+  margin: 0;
+  color: #ef4444;
+  font-size: 13px;
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #f3f4f6;
+  border-top: 3px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.errorContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 400px;
+  background: #fefefe;
+  border: 2px dashed #e5e7eb;
+  border-radius: 12px;
+  text-align: center;
+  gap: 16px;
+}
+
+.errorContainer h3 {
+  margin: 0;
+  color: #ef4444;
+  font-size: 18px;
+}
+
+.errorContainer p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.retryButton {
+  padding: 10px 20px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s;
+}
+
+.retryButton:hover {
+  background: #2563eb;
+}
+
+.rutaInfo {
+  background: #f0f9ff;
+  border-top: 1px solid #bae6fd;
+  padding: 12px 20px;
+}
+
+.rutaInfoHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #0369a1;
+  font-size: 14px;
+}
+
+.rutaStats {
+  display: flex;
+  gap: 20px;
+}
+
+.rutaStat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #0369a1;
+}
+
+.rutaStatLabel {
+  color: #64748b;
+  font-weight: 500;
+}
+
+.rutaStatValue {
+  font-weight: 600;
+  color: #0369a1;
+}
+
+.leyenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding: 12px 20px;
+  background: #f9fafb;
+  border-top: 1px solid #e5e7eb;
+}
+
+.leyendaItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #374151;
+}
+
+.marcadorAzul {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #3b82f6;
+  border: 2px solid #1e40af;
+  flex-shrink: 0;
+}
+
+.marcadorRojo {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #ef4444;
+  border: 2px solid #dc2626;
+  flex-shrink: 0;
+}
+
+.lineaRuta {
+  width: 20px;
+  height: 4px;
+  background: #3b82f6;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .mapaHeader {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .mapaInfo {
+    align-self: stretch;
+  }
+
+  .mapaControles {
+    align-self: flex-end;
+  }
+
+  .rutaStats {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .leyenda {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .mapaWrapper {
+    min-height: 300px;
+  }
+
+  .generarRutaButton,
+  .limpiarRutaButton {
+    min-width: 100px;
+    font-size: 13px;
+    padding: 6px 10px;
+  }
+}
+
+/* Personalización para InfoWindows de Google Maps */
+.gm-style .gm-style-iw-c {
+  border-radius: 8px !important;
+}
+
+.gm-style .gm-style-iw-d {
+  overflow: hidden !important;
+}
+
+/* Ocultar controles innecesarios de Google Maps */
+.gm-style .gm-fullscreen-control {
+  display: none !important;
+}
+
+/* Mejorar la visualización en dispositivos móviles */
+@media (max-width: 480px) {
+  .mapaContainer {
+    border-radius: 8px;
+  }
+  
+  .mapaHeader {
+    padding: 12px 16px;
+  }
+  
+  .centrarButton,
+  .generarRutaButton,
+  .limpiarRutaButton {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+  
+  .leyenda {
+    padding: 10px 16px;
+  }
+
+  .rutaInfo {
+    padding: 10px 16px;
+  }
+
+  .errorOverlay {
+    left: 10px;
+    right: 10px;
+    transform: none;
+    max-width: none;
+  }
+
+  .mapaControles {
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+  }
+
+  .mapaControles button {
+    width: 100%;
+    justify-content: center;
+  }
+}

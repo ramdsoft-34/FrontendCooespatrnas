@@ -1,0 +1,481 @@
+/* GestionManifiestos.module.css */
+
+.wrap {
+  padding: 0;
+}
+
+.pageHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.pageTitle {
+  font-size: 22px;
+  font-weight: 800;
+  color: #1a2236;
+  margin: 0 0 4px;
+  letter-spacing: -0.3px;
+}
+
+.pageSub {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 0;
+}
+
+.sectionTitle {
+  font-size: 16px;
+  font-weight: 800;
+  color: #1a2236;
+  margin: 0 0 4px;
+}
+
+/* ── Tabs ── */
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 0;
+  border-bottom: 2px solid #f1f5f9;
+  padding-bottom: 0;
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 18px;
+  border: none;
+  background: none;
+  font-size: 13px;
+  font-weight: 700;
+  color: #6b7280;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  border-radius: 8px 8px 0 0;
+  transition: all 0.15s;
+}
+
+.tab:hover {
+  color: #1a2236;
+  background: #f8fafc;
+}
+
+.tabActive {
+  color: #1a2236;
+  border-bottom-color: #1a2236;
+  background: #f8fafc;
+}
+
+.tabContent {
+  padding-top: 24px;
+}
+
+/* ── Bodegas grid (pantalla selector) ── */
+.bodegasGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.bodegaCard {
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+
+.bodegaCard:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  border-color: #94a3b8;
+}
+
+.bodegaCardContent {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  cursor: pointer;
+}
+
+.bodegaIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #475569;
+  flex-shrink: 0;
+  transition: background 0.12s;
+}
+
+.bodegaCard:hover .bodegaIcon {
+  background: #1a2236;
+  color: #fff;
+}
+
+.bodegaCardActions {
+  display: flex;
+  gap: 0;
+  border-top: 1px solid #f1f5f9;
+}
+
+.bodegaActionBtn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  border: none;
+  background: #f8fafc;
+  color: #64748b;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background 0.12s;
+  gap: 4px;
+}
+
+.bodegaActionBtn:first-child {
+  border-right: 1px solid #f1f5f9;
+}
+
+.bodegaActionBtn:hover {
+  background: #f1f5f9;
+  color: #1a2236;
+}
+
+.bodegaActionBtnDanger:hover {
+  background: #fff1f2;
+  color: #b91c1c;
+}
+
+/* ── Formulario header ── */
+.formularioHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.btnBack {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1.5px solid #e2e8f0;
+  background: #fff;
+  color: #374151;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+
+.btnBack:hover {
+  border-color: #1a2236;
+  color: #1a2236;
+}
+
+/* ── Formulario footer ── */
+.formularioFooter {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.btnGuardarTodo {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 24px;
+  border-radius: 9px;
+  border: none;
+  background: #1a2236;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  transition: background 0.12s;
+  flex: 1;
+  justify-content: center;
+}
+
+.btnGuardarTodo:hover:not(:disabled) {
+  background: #2d3a52;
+}
+
+/* ── Vehículo card (compacto) ── */
+.vehCard {
+  background: #fff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  transition: box-shadow 0.15s;
+}
+
+.vehCard:focus-within {
+  box-shadow: 0 0 0 3px rgba(26,34,54,0.08);
+  border-color: #94a3b8;
+}
+
+.vehCardHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  background: #f8fafc;
+  border-bottom: 1.5px solid #e2e8f0;
+}
+
+.vehBadgeNum {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: #1a2236;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.saldoChip {
+  font-size: 11px;
+  font-weight: 700;
+  background: #eff6ff;
+  color: #1d4ed8;
+  padding: 3px 10px;
+  border-radius: 20px;
+  border: 1px solid #bfdbfe;
+}
+
+.btnRemoveVeh {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  border: 1.5px solid #fca5a5;
+  background: #fff1f2;
+  color: #ef4444;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.btnRemoveVeh:hover {
+  background: #fee2e2;
+}
+
+/* ── Filas compactas ── */
+.compactRow {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+.compactField {
+  flex: 1;
+  min-width: 0;
+}
+
+.compactField input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 600px) {
+  .compactRow {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .bodegasGrid {
+    grid-template-columns: 1fr;
+  }
+  .formularioFooter {
+    flex-direction: column;
+  }
+}
+
+/* ── Valores resumen ── */
+.valoresResumen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 8px 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  font-size: 12px;
+  color: #6b7280;
+  border: 1px solid #e2e8f0;
+}
+
+.saldoFinal {
+  color: #1a2236;
+  font-weight: 800;
+  margin-left: auto;
+}
+
+/* ── Error box ── */
+.errorBox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  background: #fff1f2;
+  border: 1.5px solid #fca5a5;
+  border-radius: 8px;
+  font-size: 12px;
+  color: #b91c1c;
+}
+
+/* ── Botón agregar vehículo ── */
+.btnAddVeh {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 10px 18px;
+  border: 2px dashed #cbd5e1;
+  border-radius: 9px;
+  background: none;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btnAddVeh:hover {
+  border-color: #1a2236;
+  color: #1a2236;
+  background: #f8fafc;
+}
+
+/* ── Reportes section ── */
+.reportesSection {
+  background: #fff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+/* ── Table ── */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.table th {
+  text-align: left;
+  padding: 9px 12px;
+  background: #f8fafc;
+  color: #374151;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1.5px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.table td {
+  padding: 9px 12px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #374151;
+  vertical-align: middle;
+}
+
+.table tbody tr:hover {
+  background: #f8fafc;
+}
+
+/* ── Buttons ── */
+.btnPrimary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 9px;
+  border: none;
+  background: #1a2236;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btnPrimary:hover {
+  background: #2d3a52;
+}
+
+/* ── Modal ── */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 20px;
+}
+
+.modal {
+  background: #fff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+}
+
+.modalHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 24px 14px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+/* ── Loading ── */
+.loadingBox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 40px;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+/* ── Spin ── */
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}

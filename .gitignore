@@ -1,0 +1,26 @@
+# Dependencias
+node_modules/
+
+# Build
+/build
+/dist
+
+# Variables de entorno y secretos
+.env
+.env.local
+.env.production.local
+*.pem
+*.key
+
+# Logs
+*.log
+npm-debug.log*
+
+# Sistema / editores
+.DS_Store
+.vscode/
+.idea/
+
+# Cache
+.cache/
+.eslintcache
