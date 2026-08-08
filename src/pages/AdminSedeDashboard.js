@@ -606,7 +606,7 @@ export function SeguimientoPlanillas({ user }) {
               <table className={styles.seg_table}>
                 <thead>
                   <tr>
-                    <th>#</th><th>Planilla</th><th>Placa Vehículo</th><th>Conductor</th>
+                    <th>#</th><th>Placa Vehículo</th><th>Conductor</th>
                     <th>Ruta</th><th>Sede</th><th>Empresa</th><th>F. Salida</th><th>Saldo a Pagar</th>
                     <th>Alerta</th><th>Estado Leg.</th><th>Editar</th>
                   </tr>
