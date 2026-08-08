@@ -101,8 +101,6 @@ const parseMoney = (val) =>
   Number((val || '').toString().replace(/\./g, '').replace(',', '.')) || 0;
 const PAGE_SIZE = 20;
 
-const novedadTieneContenido = (n) =>
-  !!(n.planilla?.trim() || n.descripcion?.trim() || String(n.valor ?? '').trim());
 
 // ── Toast de notificaciones ───────────────────────────────────────────────────
 const toastStyles = {
@@ -393,16 +391,6 @@ export default function SedeDashboard({ user, onLogout }) {
         bodyObj.alertaLegalizacion = cleanedForm.alertaLegalizacion;
         bodyObj.retencion = cleanedForm.retencion;
         bodyObj.saldoPagar = cleanedForm.saldoPagar;
-        bodyObj.utilidad = cleanedForm.utilidad;
-        if (!locked.includes('nroFacturaPago')) bodyObj.nroFacturaPago = cleanedForm.nroFacturaPago;
-        if (!locked.includes('valorPagado')) bodyObj.valorPagado = cleanedForm.valorPagado;
-        if (!locked.includes('observacionesCruze')) bodyObj.observacionesCruze = cleanedForm.observacionesCruze;
-      }
-
-      if (esSede) {
-        delete bodyObj.nroFacturaPago;
-        delete bodyObj.valorPagado;
-        delete bodyObj.observacionesCruze;
       }
 
       const url = editTarget ? `${API}/planillas/${editTarget._id}` : `${API}/planillas`;
@@ -484,59 +472,6 @@ export default function SedeDashboard({ user, onLogout }) {
     }
   };
 
-  const addNovedad = () => {
-    if (form.novedades.length >= 5) return;
-    setForm(prev => ({
-      ...prev,
-      novedades: [
-        ...prev.novedades,
-        {
-          planilla: prev.nroFacturaMula || '',
-          descripcion: prev.novedadesAverias || '',
-          valor: parseMoney(prev.valorAverias) || '',
-          _locked: true,
-        },
-      ],
-      nroFacturaMula: '',
-      valorAverias: '',
-      novedadesAverias: '',
-    }));
-  };
-
-  const removeNovedad = (idx) =>
-    setForm(prev => ({ ...prev, novedades: prev.novedades.filter((_, i) => i !== idx) }));
-
-  const handleNovedadChange = (idx, field, value) =>
-    setForm(prev => {
-      const copy = [...prev.novedades];
-      copy[idx] = { ...copy[idx], [field]: field === 'valor' ? value : value.toUpperCase() };
-      return { ...prev, novedades: copy };
-    });
-
-  const addNovedadLeg = () => {
-    if (form.novedadesLegalizacion.length >= 5) return;
-    setForm(prev => ({
-      ...prev,
-      novedadesLegalizacion: [
-        ...prev.novedadesLegalizacion,
-        {
-          planilla: prev.nroFacturaCorbeta || '',
-          descripcion: prev.observaciones || '',
-          valor: parseMoney(prev.valorFacturaCorbeta) || '',
-          _locked: true,
-        },
-      ],
-      nroFacturaCorbeta: '',
-      observaciones: '',
-      valorFacturaCorbeta: '',
-    }));
-  };
-
-  const removeNovedadLeg = (idx) =>
-    setForm(prev => ({
-      ...prev,
-      novedadesLegalizacion: prev.novedadesLegalizacion.filter((_, i) => i !== idx),
-    }));
 
   const handleNovedadLegChange = (idx, field, value) =>
     setForm(prev => {
@@ -687,8 +622,6 @@ export default function SedeDashboard({ user, onLogout }) {
                         <th>Flete</th>
                         <th>Saldo</th>
                         <th>Estado Leg.</th>
-                        <th>Contado</th>
-                        <th>Crédito</th>
                         <th>Acción</th>
                       </tr>
                     </thead>
@@ -735,8 +668,6 @@ export default function SedeDashboard({ user, onLogout }) {
                                 );
                               })()}
                             </td>
-                            <td>{fmtMoney(p.contado)}</td>
-                            <td>{fmtMoney(p.credito)}</td>
                             <td>
                               <button
                                 className={`${styles.iconBtn} ${tieneVacios ? styles.iconBtnEdit : styles.iconBtnLock}`}
@@ -751,7 +682,7 @@ export default function SedeDashboard({ user, onLogout }) {
                       })}
                       {planillasPagina.length === 0 && (
                         <tr>
-                          <td colSpan={14} className={styles.emptyCell}>
+                          <td colSpan={12} className={styles.emptyCell}>
                             {planillas.length === 0
                               ? 'Sin planillas registradas. Crea la primera.'
                               : 'Sin resultados para la búsqueda.'}
@@ -976,13 +907,7 @@ export default function SedeDashboard({ user, onLogout }) {
 }
 
 // ── Helpers de estilo ─────────────────────────────────────────────────────────
-const btnAddStyle = (border, bg, color) => ({
-  display: 'flex', alignItems: 'center', gap: 5,
-  padding: '5px 12px', borderRadius: 7,
-  border: `1.5px solid ${border}`,
-  background: bg, color,
-  fontSize: 12, fontWeight: 700, cursor: 'pointer',
-});
+
 const EMPRESA_BADGE_CLASS = {
   'CORBETA': 'badgePurple',
   'DISTRIBUIDORA DULCES Y DULCES': 'badgeAmber',

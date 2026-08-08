@@ -122,34 +122,23 @@ const ESTADOS_LEG = ['Todos', 'Pendiente', 'Legalizado', 'Vencida'];
 const PAGE_SIZE = 20;
 
 const LOCKABLE = [
-  'empresa', 'planilla', 'placaMula', 'nombreConductorMula', 'nroFacturaMula',
-  'novedadesAverias', 'valorAverias', 'conductorRuta', 'placaTrasbordo',
-  'planillaTrasbordo', 'tipoViaje', 'nroManifiesto', 'fechaSalidaRuta',
-  'ruta', 'plazoMaximo', 'limiteEntrega', 'flete', 'anticipo', 'ajusteAutorizado',
-  'retencion', 'alertaLegalizacion', 'fechaLegalizacion', 'fechaLegalizacionReal',
-  'estadoLegalizacion', 'nroFacturaCorbeta', 'valorFacturaCorbeta', 'observaciones',
-  'nroFacturaPago', 'fechaPago', 'valorPagado', 'observacionesCruze',
-  'credito', 'contado',
+  'empresa', 'planilla', 'placaTrasbordo', 'conductorRuta',
+  'tipoViaje', 'nroManifiesto', 'fechaSalidaRuta', 'ruta',
+  'plazoMaximo', 'limiteEntrega', 'flete', 'anticipo',
+  'ajusteAutorizado', 'retencion', 'alertaLegalizacion',
+  'fechaLegalizacionReal', 'estadoLegalizacion',
 ];
 
 const EMPTY_FORM = {
   sede: '',
-  empresa: '', planilla: '', placaMula: '', nroFacturaMula: '',
-  novedadesAverias: '', valorAverias: '',
-  nombreConductorMula: '',
-  conductorRuta: '', placaTrasbordo: '', planillaTrasbordo: '',
-  tipoViaje: '', nroManifiesto: '',
+  empresa: '', planilla: '', placaTrasbordo: '',
+  conductorRuta: '', tipoViaje: '', nroManifiesto: '',
   fechaSalidaRuta: '', ruta: '', plazoMaximo: '',
   limiteEntrega: '', flete: '', anticipo: '',
   ajusteAutorizado: '',
   retencion: '0', saldoPagar: '0',
-  alertaLegalizacion: '', fechaLegalizacion: '',
+  alertaLegalizacion: '',
   fechaLegalizacionReal: '', estadoLegalizacion: '',
-  nroFacturaCorbeta: '', valorFacturaCorbeta: '', observaciones: '',
-  novedades: [], novedadesLegalizacion: [],
-  nroFacturaPago: '', fechaPago: '', valorPagado: '',
-  utilidad: '0', observacionesCruze: '',
-  credito: '', contado: '',
 };
 
 const UPPERCASE_EXCLUDE = ['tipoViaje', 'sede'];
@@ -320,18 +309,9 @@ export function SeguimientoPlanillas({ user }) {
         }
       }
     });
-    f.valorFacturaCorbeta = p.valorFacturaCorbeta != null ? p.valorFacturaCorbeta : '';
     f.empresa = p.empresa || '';
-    f.novedades = Array.isArray(p.novedades) ? p.novedades : [];
-    f.novedadesLegalizacion = Array.isArray(p.novedadesLegalizacion) ? p.novedadesLegalizacion : [];
     f.saldoPagar = p.saldoPagar != null ? p.saldoPagar : '0';
     f.retencion = p.retencion != null ? p.retencion : '0';
-    f.utilidad = p.utilidad != null ? p.utilidad : '0';
-    f.nroFacturaPago = p.nroFacturaPago || '';
-    f.valorPagado = p.valorPagado != null ? p.valorPagado : '';
-    f.observacionesCruze = p.observacionesCruze || '';
-    f.credito = p.credito != null ? p.credito : '';
-    f.contado = p.contado != null ? p.contado : '';
     f.limiteEntrega = p.limiteEntrega
       ? (typeof p.limiteEntrega === 'string' ? p.limiteEntrega.slice(0, 10) : new Date(p.limiteEntrega).toISOString().slice(0, 10))
       : '';
@@ -374,12 +354,10 @@ export function SeguimientoPlanillas({ user }) {
       const flete = parseMoney(name === 'flete' ? value : prev.flete);
       const ajuste = parseMoney(name === 'ajusteAutorizado' ? value : prev.ajusteAutorizado);
       const anticipo = parseMoney(name === 'anticipo' ? value : prev.anticipo);
-      const valorPagado = parseMoney(name === 'valorPagado' ? value : prev.valorPagado);
       const base = flete + ajuste;
       const retencion = base * 0.01;
       const saldoPagar = base - anticipo - retencion;
-      const utilidad = valorPagado > 0 ? valorPagado - base : 0;
-      return { ...updated, retencion: retencion.toFixed(2), saldoPagar: saldoPagar.toFixed(2), utilidad: utilidad.toFixed(2) };
+      return { ...updated, retencion: retencion.toFixed(2), saldoPagar: saldoPagar.toFixed(2) };
     });
   };
 
@@ -395,14 +373,12 @@ export function SeguimientoPlanillas({ user }) {
     }
     setSaving(true); setFormError('');
     try {
-      const MONEY_FIELDS = ['flete', 'anticipo', 'ajusteAutorizado', 'valorPagado', 'valorAverias', 'valorFacturaCorbeta', 'credito', 'contado'];
+      const MONEY_FIELDS = ['flete', 'anticipo', 'ajusteAutorizado'];
       const cleanedForm = { ...form };
       MONEY_FIELDS.forEach(field => { cleanedForm[field] = parseMoney(cleanedForm[field]); });
-      ['retencion', 'saldoPagar', 'utilidad'].forEach(field => {
+      ['retencion', 'saldoPagar'].forEach(field => {
         cleanedForm[field] = parseFloat(cleanedForm[field]) || 0;
       });
-      cleanedForm.novedades = (form.novedades || []).map(n => ({ ...n, valor: parseFloat(n.valor) || 0 }));
-      cleanedForm.novedadesLegalizacion = (form.novedadesLegalizacion || []).map(n => ({ ...n, valor: parseFloat(n.valor) || 0 }));
 
       const url = editTarget ? `${API_URL}/planillas/${editTarget._id}` : `${API_URL}/planillas`;
       const method = editTarget ? 'PUT' : 'POST';
@@ -632,7 +608,7 @@ export function SeguimientoPlanillas({ user }) {
                   <tr>
                     <th>#</th><th>Planilla</th><th>Placa Vehículo</th><th>Conductor</th>
                     <th>Ruta</th><th>Sede</th><th>Empresa</th><th>F. Salida</th><th>Saldo a Pagar</th>
-                    <th>Alerta</th><th>Estado Leg.</th><th>Contado</th><th>Crédito</th><th>Editar</th>
+                    <th>Alerta</th><th>Estado Leg.</th><th>Editar</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -684,8 +660,6 @@ export function SeguimientoPlanillas({ user }) {
                             );
                           })()}
                         </td>
-                        <td>{fmtMoney(p.contado)}</td>
-                        <td>{fmtMoney(p.credito)}</td>
                         <td>
                           <button className={styles.seg_expandBtn} onClick={() => openEdit(p)} title="Editar planilla">
                             <Edit2 size={13} /> Editar
@@ -696,7 +670,7 @@ export function SeguimientoPlanillas({ user }) {
                   })}
                   {filtiradasPagina.length === 0 && !loading && (
                     <tr>
-                      <td colSpan={14} className={styles.seg_emptyCell}>
+                      <td colSpan={12} className={styles.seg_emptyCell}>
                         {planillas.length === 0 ? 'No hay planillas registradas.' : 'Sin resultados.'}
                       </td>
                     </tr>
