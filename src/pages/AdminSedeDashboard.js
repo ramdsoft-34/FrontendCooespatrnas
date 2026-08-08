@@ -617,7 +617,6 @@ export function SeguimientoPlanillas({ user }) {
                     return (
                       <tr key={p._id || i}>
                         <td className={styles.seg_tdNum}>{numGlobal}</td>
-                        <td><strong>{p.planilla || '—'}</strong></td>
                         <td>{p.placaTrasbordo || '—'}</td>
                         <td>{p.conductorRuta || '—'}</td>
                         <td className={styles.seg_tdRuta}>{p.ruta || '—'}</td>
