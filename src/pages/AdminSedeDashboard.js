@@ -661,7 +661,7 @@ export function SeguimientoPlanillas({ user }) {
                         </td>
                         <td>
                           <button className={styles.seg_expandBtn} onClick={() => openEdit(p)} title="Editar planilla">
-                            <Edit2 size={13} /> Editar
+                            <Edit2 size={12} /> Editar
                           </button>
                         </td>
                       </tr>
