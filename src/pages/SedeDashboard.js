@@ -261,13 +261,6 @@ export default function SedeDashboard({ user, onLogout }) {
       }
     });
 
-    f.novedades = Array.isArray(p.novedades)
-      ? p.novedades.map(n => ({ ...n, _locked: novedadTieneContenido(n) }))
-      : [];
-
-    f.novedadesLegalizacion = Array.isArray(p.novedadesLegalizacion)
-      ? p.novedadesLegalizacion.map(n => ({ ...n, _locked: novedadTieneContenido(n) }))
-      : [];
 
     f.nroFacturaPago = p.nroFacturaPago || '';
     f.valorFacturaCorbeta = p.valorFacturaCorbeta != null ? p.valorFacturaCorbeta : '';
