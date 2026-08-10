@@ -365,6 +365,7 @@ export default function MapaRecorrido({
 }) {
   const [recorrido, setRecorrido] = useState([]);
   const [recorridoPorVias, setRecorridoPorVias] = useState(null);
+  const [segmentosRecorrido, setSegmentosRecorrido] = useState([]);
   const [calculandoRuta, setCalculandoRuta] = useState(false);
   const [estadisticas, setEstadisticas] = useState({
     distanciaTotal: 0,
@@ -439,6 +440,17 @@ export default function MapaRecorrido({
             cantidadPuntos: data.data.cantidadPuntos || 0,
             activo: data.data.activo,
           });
+          // 🆕 Tramos ya listos para dibujar: uno por segmento, para nunca
+          // unir con línea recta el final de un tramo con el inicio del
+          // siguiente (hueco de señal, app cerrada, túnel). Si el backend es
+          // una versión vieja sin 'segmentos', se cae a un solo tramo con
+          // todo el recorrido — igual que el comportamiento anterior.
+          const segmentosBackend = data.data.segmentos || [];
+          setSegmentosRecorrido(
+            segmentosBackend.length > 0
+              ? segmentosBackend
+              : (puntos.length > 0 ? [puntos] : [])
+          );
         }
       } else {
         console.error('Error al cargar recorrido:', res.status);
@@ -577,30 +589,58 @@ export default function MapaRecorrido({
             maxZoom={20}
           />
 
-          {puntosParaDibujar.length > 1 && (
-            <>
-              <Polyline
-                positions={puntosParaDibujar}
-                pathOptions={{
-                  color: recorridoPorVias
-                    ? 'rgba(16, 185, 129, 0.3)'
-                    : 'rgba(59, 130, 246, 0.3)',
-                  weight: 10,
-                  lineCap: 'round',
-                  lineJoin: 'round',
-                }}
-              />
-              <Polyline
-                positions={puntosParaDibujar}
-                pathOptions={{
-                  color: recorridoPorVias ? '#10b981' : '#3b82f6',
-                  weight: 4,
-                  lineCap: 'round',
-                  lineJoin: 'round',
-                }}
-              />
-            </>
-          )}
+          {segmentosRecorrido.map((seg, i) => {
+            if (!seg || seg.length === 0) return null;
+
+            // Un tramo de un solo punto (recién reconectado, o justo tras un
+            // hueco) no se puede dibujar como línea. Se muestra como
+            // marcador para que el recorrido nunca "desaparezca" por falta
+            // de puntos suficientes.
+            if (seg.length === 1) {
+              return (
+                <Marker
+                  key={`seg-punto-${i}`}
+                  position={seg[0]}
+                  icon={L.divIcon({
+                    className: 'segmento-punto-unico',
+                    html: `<div style="width:12px;height:12px;background:${
+                      recorridoPorVias ? '#10b981' : '#3b82f6'
+                    };border:2px solid white;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.3);"></div>`,
+                    iconSize: [12, 12],
+                    iconAnchor: [6, 6],
+                  })}
+                />
+              );
+            }
+
+            // Dos polilíneas por tramo (sombra + línea), UNA por cada tramo
+            // — nunca una sola con todo el recorrido. Así el mapa jamás une
+            // el final de un tramo con el inicio del siguiente.
+            return (
+              <React.Fragment key={`seg-${i}`}>
+                <Polyline
+                  positions={seg}
+                  pathOptions={{
+                    color: recorridoPorVias
+                      ? 'rgba(16, 185, 129, 0.3)'
+                      : 'rgba(59, 130, 246, 0.3)',
+                    weight: 10,
+                    lineCap: 'round',
+                    lineJoin: 'round',
+                  }}
+                />
+                <Polyline
+                  positions={seg}
+                  pathOptions={{
+                    color: recorridoPorVias ? '#10b981' : '#3b82f6',
+                    weight: 4,
+                    lineCap: 'round',
+                    lineJoin: 'round',
+                  }}
+                />
+              </React.Fragment>
+            );
+          })}
 
           {recorrido.map((punto, index) => {
             if (index === 0 || index === recorrido.length - 1) return null;
@@ -807,6 +847,7 @@ export function MapaRecorridoHistorico({
 }) {
   const [recorrido, setRecorrido] = useState([]);
   const [recorridoPorVias, setRecorridoPorVias] = useState(null);
+  const [segmentosRecorrido, setSegmentosRecorrido] = useState([]);
   const [calculandoRuta, setCalculandoRuta] = useState(false);
   const [estadisticas, setEstadisticas] = useState({
     distanciaTotal: 0,
@@ -875,6 +916,16 @@ export function MapaRecorridoHistorico({
             distanciaTotal: data.data.distanciaTotal || 0,
             cantidadPuntos: data.data.cantidadPuntos || 0,
           }));
+
+          // Igual que en el mapa en tiempo real: tramos ya listos para
+          // dibujar, uno por segmento, para nunca unir con línea recta el
+          // final de un tramo con el inicio del siguiente.
+          const segmentosBackend = data.data.segmentos || [];
+          setSegmentosRecorrido(
+            segmentosBackend.length > 0
+              ? segmentosBackend
+              : (puntos.length > 0 ? [puntos] : [])
+          );
         }
       } else {
         setError('No se encontró el recorrido de este viaje');
@@ -1095,28 +1146,52 @@ export function MapaRecorridoHistorico({
             <AjustarAlRecorrido puntos={puntosParaDibujar} />
             <RedimensionarMapa expandido={mapaExpandido} puntos={puntosParaDibujar} />
 
-            {puntosParaDibujar.length > 1 && (
-              <>
-                <Polyline
-                  positions={puntosParaDibujar}
-                  pathOptions={{
-                    color: colorSombra,
-                    weight: 10,
-                    lineCap: 'round',
-                    lineJoin: 'round',
-                  }}
-                />
-                <Polyline
-                  positions={puntosParaDibujar}
-                  pathOptions={{
-                    color: colorPrincipal,
-                    weight: 4,
-                    lineCap: 'round',
-                    lineJoin: 'round',
-                  }}
-                />
-              </>
-            )}
+            {segmentosRecorrido.map((seg, i) => {
+              if (!seg || seg.length === 0) return null;
+
+              // Un tramo de un solo punto no se puede dibujar como línea:
+              // se muestra como marcador para que el recorrido nunca
+              // "desaparezca" por falta de puntos suficientes.
+              if (seg.length === 1) {
+                return (
+                  <Marker
+                    key={`seg-punto-${i}`}
+                    position={seg[0]}
+                    icon={L.divIcon({
+                      className: 'segmento-punto-unico',
+                      html: `<div style="width:12px;height:12px;background:${colorPrincipal};border:2px solid white;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.3);"></div>`,
+                      iconSize: [12, 12],
+                      iconAnchor: [6, 6],
+                    })}
+                  />
+                );
+              }
+
+              // Dos polilíneas por tramo — UNA por cada tramo, nunca una
+              // sola con todo el recorrido, para no unir huecos de señal.
+              return (
+                <React.Fragment key={`seg-${i}`}>
+                  <Polyline
+                    positions={seg}
+                    pathOptions={{
+                      color: colorSombra,
+                      weight: 10,
+                      lineCap: 'round',
+                      lineJoin: 'round',
+                    }}
+                  />
+                  <Polyline
+                    positions={seg}
+                    pathOptions={{
+                      color: colorPrincipal,
+                      weight: 4,
+                      lineCap: 'round',
+                      lineJoin: 'round',
+                    }}
+                  />
+                </React.Fragment>
+              );
+            })}
 
             {recorrido.map((punto, index) => {
               if (index === 0 || index === recorrido.length - 1) return null;
