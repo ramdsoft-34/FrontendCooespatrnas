@@ -333,7 +333,7 @@ export function SeguimientoPlanillas({ user }) {
       const updated = { ...prev, [name]: value };
       if (name === 'planilla') updated.planillaTrasbordo = value;
       if (name === 'tipoViaje') {
-        updated.plazoMaximo = value === 'Urbano' ? '2' : value === 'Correría' ? '4' : '';
+        updated.plazoMaximo = value === 'Urbano' ? '1' : value === 'Correría' ? '2' : '';
       }
       const fechaSalida = name === 'fechaSalidaRuta' ? value : prev.fechaSalidaRuta;
       const dias = Number(updated.plazoMaximo) || 0;
@@ -789,7 +789,7 @@ export function SeguimientoPlanillas({ user }) {
                     <select name="tipoViaje" value={form.tipoViaje || ''} onChange={handleFieldChange}
                       style={{ padding: '10px 13px', borderRadius: 8, border: '1.5px solid #d0d5dd', fontSize: 14, background: '#fff', color: '#1a2236', cursor: 'pointer', outline: 'none', width: '100%', boxSizing: 'border-box' }}>
                       <option value="">Seleccionar…</option>
-                      <option value="Urbano">Urbano</option>
+                      <option value="Urbano">Traslados</option>
                       <option value="Correría">Correría</option>
                     </select>
                   </div>
