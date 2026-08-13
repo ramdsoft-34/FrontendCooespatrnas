@@ -12,10 +12,11 @@ import {
 import GestionPDFs from './GestionPDFs';
 import { authFetch } from '../utils/authFetch';
 
+
 const API_BASE = 'https://api.cooespatrans.com/api';
 const API_BACKEND = 'https://app.backend.cooespatrans.com/api';
 
-export default function Viajes() {
+export default function Viajes({ bodegaId } = {}) {
   const [fotoAmpliada, setFotoAmpliada] = useState(null);
   const [viajes, setViajes] = useState([]);
   const [viajeSeleccionado, setViajeSeleccionado] = useState(null);
@@ -24,6 +25,7 @@ export default function Viajes() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
   const [vistaGrid, setVistaGrid] = useState(true);
+  const idBodegaViaje = (v) => v.bodega?._id || v.bodega?.id || null;
 
   const [mostrarModalCambiarConductor, setMostrarModalCambiarConductor] = useState(false);
   const [choferes, setChoferes] = useState([]);
@@ -394,7 +396,9 @@ export default function Viajes() {
       v.choferInfo?.nombre?.toLowerCase().includes(t) ||
       v.choferInfo?.placa?.toLowerCase().includes(t);
     const matchEstado = filtroEstado === 'todos' || v.estado === filtroEstado;
-    const matchBodega = filtroBodega === 'todas' || v.bodega?.nombre === filtroBodega;
+    const matchBodega = bodegaId                                   // 👈 nuevo
+      ? idBodegaViaje(v) === bodegaId
+      : (filtroBodega === 'todas' || v.bodega?.nombre === filtroBodega);
     const matchHoy = !soloHoy || esMismoDia(v.fecha);
     return matchBusqueda && matchEstado && matchBodega && matchHoy;
   });
@@ -1161,19 +1165,21 @@ export default function Viajes() {
               </button>
             )}
           </div>
-          <div className={styles.filterGroup}>
-            <Building2 size={15} style={{ color: '#9ca3af' }} />
-            <select
-              value={filtroBodega}
-              onChange={e => setFiltroBodega(e.target.value)}
-              className={styles.filterSelect}
-            >
-              <option value="todas">Todas las bodegas</option>
-              {bodegasDisponibles.map(b => (
-                <option key={b.nombre} value={b.nombre}>{b.nombre}</option>
-              ))}
-            </select>
-          </div>
+          {!bodegaId && (                                    // 👈 envuelto en condición
+            <div className={styles.filterGroup}>
+              <Building2 size={15} style={{ color: '#9ca3af' }} />
+              <select
+                value={filtroBodega}
+                onChange={e => setFiltroBodega(e.target.value)}
+                className={styles.filterSelect}
+              >
+                <option value="todas">Todas las bodegas</option>
+                {bodegasDisponibles.map(b => (
+                  <option key={b.nombre} value={b.nombre}>{b.nombre}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* 🆕 Toggle "Solo hoy" */}
           <button

@@ -10,6 +10,7 @@ import SedeDashboard from './pages/SedeDashboard';
 import CoordLogisticoDashboard from './pages/CoordLogisticoDashboard';
 import ManifiestoPage from './pages/ManifiestoPage';
 import PrivacidadAPP from './pages/PrivacidadAPP';
+import JefeBodegaDashboard from './pages/JefeBodegaDashboard';
 import './App.css';
 
 function routeForRole(role) {
@@ -19,6 +20,7 @@ function routeForRole(role) {
     case 'sede':           return '/sede';
     case 'userManifiesto': return '/manifiestos';
     case 'coordLogistico': return '/coordinador';
+    case 'jefeBodega':     return '/jefeBodega';
     default:               return '/dashboard';
   }
 }
@@ -36,6 +38,7 @@ function App() {
         <Route path="/coordinador"    element={<CoordLogisticoWrapper />} />
         <Route path="/manifiestos"    element={<ManifiestoWrapper />} />
         <Route path="/privacidadAPP"  element={<PrivacidadAPP />} />
+        <Route path="/jefeBodega" element={<JefeBodegaWrapper />} />
         <Route path="*"               element={<Navigate to="/" />} />
       </Routes>
     </div>
@@ -141,6 +144,21 @@ function CoordLogisticoWrapper() {
   }, []);
   const user = JSON.parse(localStorage.getItem('user') || 'null');
   return <CoordLogisticoDashboard user={user} onLogout={onLogout} />;
+}
+
+function JefeBodegaWrapper() {
+  const navigate = useNavigate();
+  const onLogout = useLogout();
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem('user') || 'null');
+    if (!user) { navigate('/', { replace: true }); return; }
+    if (user.role !== 'jefeBodega') { navigate(routeForRole(user.role), { replace: true }); return; }
+    blockBackButton();
+    window.addEventListener('popstate', blockBackButton);
+    return () => window.removeEventListener('popstate', blockBackButton);
+  }, []);
+  const user = JSON.parse(localStorage.getItem('user') || 'null');
+  return <JefeBodegaDashboard user={user} onLogout={onLogout} />;
 }
 
 // ── MANIFIESTO WRAPPER ────────────────────────────────────────────────────

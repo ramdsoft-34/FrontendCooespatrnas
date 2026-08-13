@@ -5,27 +5,30 @@ import {
 } from 'lucide-react';
 import Modal from '../components/Modal';
 import styles from './GestionUsuarios.module.css';
+import { authFetch } from '../utils/authFetch';
 
 const API_URL = process.env.REACT_APP_API_URL || 'https://api.cooespatrans.com/api';
 
 const ROLES = [
-  { value: 'user',           label: 'Usuario'             },
-  { value: 'admin',          label: 'Administrador'        },
-  { value: 'adminSede',      label: 'Admin de Sede'        },
-  { value: 'sede',           label: 'Sede'                 },
-  { value: 'userManifiesto', label: 'Operador Manifiesto'  },
+  { value: 'user', label: 'Usuario' },
+  { value: 'admin', label: 'Administrador' },
+  { value: 'adminSede', label: 'Admin de Sede' },
+  { value: 'sede', label: 'Sede' },
+  { value: 'userManifiesto', label: 'Operador Manifiesto' },
   { value: 'coordLogistico', label: 'Coordinador Logístico' },
+  { value: 'jefeBodega', label: 'Jefe de Bodega' },
 ];
 
 const SEDES_VALIDAS = ['Pitalito', 'Neiva', 'Pasto'];
 
 const ROLE_MAP = {
-  admin:          { color: '#7c3aed', bg: '#f5f3ff', label: 'Administrador'       },
-  adminSede:      { color: '#4338ca', bg: '#eef2ff', label: 'Admin de Sede'       },
-  sede:           { color: '#0369a1', bg: '#e0f2fe', label: 'Sede'                },
+  admin: { color: '#7c3aed', bg: '#f5f3ff', label: 'Administrador' },
+  adminSede: { color: '#4338ca', bg: '#eef2ff', label: 'Admin de Sede' },
+  sede: { color: '#0369a1', bg: '#e0f2fe', label: 'Sede' },
   userManifiesto: { color: '#b45309', bg: '#fffbeb', label: 'Operador Manifiesto' },
-  user:           { color: '#374151', bg: '#f3f4f6', label: 'Usuario'             },
+  user: { color: '#374151', bg: '#f3f4f6', label: 'Usuario' },
   coordLogistico: { color: '#be185d', bg: '#fdf2f8', label: 'Coordinador Logístico' },
+  jefeBodega: { color: '#0f766e', bg: '#f0fdfa', label: 'Jefe de Bodega' },
 };
 
 const RolBadge = ({ role }) => {
@@ -41,38 +44,49 @@ export default function GestionUsuarios() {
   const [vista, setVista] = useState('lista'); // 'lista' | 'crear'
 
   /* ───────────────── LISTA / GESTIÓN ───────────────── */
-  const [usuarios,   setUsuarios]   = useState([]);
-  const [cargando,   setCargando]   = useState(false);
-  const [error,      setError]      = useState('');
-  const [filtro,     setFiltro]     = useState('');
-  const [filtroRol,  setFiltroRol]  = useState('todos');
+  const [usuarios, setUsuarios] = useState([]);
+  const [cargando, setCargando] = useState(false);
+  const [error, setError] = useState('');
+  const [filtro, setFiltro] = useState('');
+  const [filtroRol, setFiltroRol] = useState('todos');
+  const [bodegas, setBodegas] = useState([]);
 
-  const [modalEliminar,  setModalEliminar]  = useState(false);
-  const [usuarioAElim,   setUsuarioAElim]   = useState(null);
-  const [eliminando,     setEliminando]     = useState(false);
+  const [modalEliminar, setModalEliminar] = useState(false);
+  const [usuarioAElim, setUsuarioAElim] = useState(null);
+  const [eliminando, setEliminando] = useState(false);
 
-  const [modalEditar,    setModalEditar]    = useState(false);
+  const [modalEditar, setModalEditar] = useState(false);
   const [usuarioAEditar, setUsuarioAEditar] = useState(null);
   const [formEdit, setFormEdit] = useState({
-    email: '', role: '', sedeNombre: '', newPassword: '', confirmPassword: ''
+    email: '', role: '', sedeNombre: '', bodegaId: '', newPassword: '', confirmPassword: '' // 👈 bodegaId
   });
-  const [showPass,    setShowPass]    = useState(false);
+  const [showPass, setShowPass] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [guardando,   setGuardando]   = useState(false);
-  const [editMsg,     setEditMsg]     = useState({ type: '', text: '' });
+  const [guardando, setGuardando] = useState(false);
+  const [editMsg, setEditMsg] = useState({ type: '', text: '' });
 
   const [alerta, setAlerta] = useState({ open: false, title: '', message: '', type: 'info' });
   const mostrarAlerta = (title, message, type = 'info') =>
     setAlerta({ open: true, title, message, type });
 
-  useEffect(() => { cargarUsuarios(); }, []);
+  useEffect(() => { cargarUsuarios(); cargarBodegas(); }, []);
+
+  const cargarBodegas = async () => {
+    try {
+      const res = await authFetch(`${API_URL}/bodegas`);
+      const data = await res.json();
+      setBodegas(Array.isArray(data) ? data : (data.bodegas || []));
+    } catch (err) {
+      console.error('Error al cargar bodegas', err);
+    }
+  };
 
   const cargarUsuarios = async () => {
     setCargando(true);
     setError('');
     try {
       const token = localStorage.getItem('token');
-      const res   = await fetch(`${API_URL}/auth/users`, {
+      const res = await fetch(`${API_URL}/auth/users`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -92,7 +106,7 @@ export default function GestionUsuarios() {
     setEliminando(true);
     try {
       const token = localStorage.getItem('token');
-      const res   = await fetch(`${API_URL}/auth/users/${usuarioAElim._id}`, {
+      const res = await fetch(`${API_URL}/auth/users/${usuarioAElim._id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -112,10 +126,11 @@ export default function GestionUsuarios() {
   const abrirEditar = (u) => {
     setUsuarioAEditar(u);
     setFormEdit({
-      email:           u.email,
-      role:            u.role,
-      sedeNombre:      u.sedeNombre || '',
-      newPassword:     '',
+      email: u.email,
+      role: u.role,
+      sedeNombre: u.sedeNombre || '',
+      bodegaId: (typeof u.bodegaId === 'object' ? u.bodegaId?._id : u.bodegaId) || '',
+      newPassword: '',
       confirmPassword: '',
     });
     setEditMsg({ type: '', text: '' });
@@ -124,12 +139,14 @@ export default function GestionUsuarios() {
     setModalEditar(true);
   };
 
+
   const handleEditChange = (e) => {
     const { name, value } = e.target;
     setFormEdit(prev => ({
       ...prev,
       [name]: value,
       ...(name === 'role' && value !== 'sede' ? { sedeNombre: '' } : {}),
+      ...(name === 'role' && value !== 'jefeBodega' ? { bodegaId: '' } : {}), // 👈 nuevo
     }));
     setEditMsg({ type: '', text: '' });
   };
@@ -141,6 +158,9 @@ export default function GestionUsuarios() {
     if (formEdit.role === 'sede' && !formEdit.sedeNombre) {
       setEditMsg({ type: 'error', text: 'Selecciona una sede.' }); return;
     }
+    if (formEdit.role === 'jefeBodega' && !formEdit.bodegaId) {     // 👈 aquí
+      setEditMsg({ type: 'error', text: 'Selecciona una bodega.' }); return;
+    }
     if (formEdit.newPassword && formEdit.newPassword.length < 6) {
       setEditMsg({ type: 'error', text: 'La contraseña debe tener al menos 6 caracteres.' }); return;
     }
@@ -151,17 +171,19 @@ export default function GestionUsuarios() {
     setGuardando(true);
     try {
       const token = localStorage.getItem('token');
-      const body  = {
-        email:      formEdit.email,
-        role:       formEdit.role,
+      // dentro de guardarCambios
+      const body = {
+        email: formEdit.email,
+        role: formEdit.role,
         sedeNombre: formEdit.role === 'sede' ? formEdit.sedeNombre : null,
+        bodegaId: formEdit.role === 'jefeBodega' ? formEdit.bodegaId : null,
         ...(formEdit.newPassword ? { password: formEdit.newPassword } : {}),
       };
 
-      const res  = await fetch(`${API_URL}/auth/users/${usuarioAEditar._id}`, {
-        method:  'PUT',
+      const res = await fetch(`${API_URL}/auth/users/${usuarioAEditar._id}`, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body:    JSON.stringify(body),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Error al actualizar');
@@ -179,30 +201,31 @@ export default function GestionUsuarios() {
     const t = filtro.toLowerCase();
     const matchTexto =
       u.username?.toLowerCase().includes(t) ||
-      u.email?.toLowerCase().includes(t)    ||
+      u.email?.toLowerCase().includes(t) ||
       u.sedeNombre?.toLowerCase().includes(t);
     const matchRol = filtroRol === 'todos' || u.role === filtroRol;
     return matchTexto && matchRol;
   });
 
-  const stats = {
-    total:          usuarios.length,
-    admin:          usuarios.filter(u => u.role === 'admin').length,
-    adminSede:      usuarios.filter(u => u.role === 'adminSede').length,
-    sede:           usuarios.filter(u => u.role === 'sede').length,
-    user:           usuarios.filter(u => u.role === 'user').length,
-    userManifiesto: usuarios.filter(u => u.role === 'userManifiesto').length,
-    coordLogistico: usuarios.filter(u => u.role === 'coordLogistico').length,
-  };
+const stats = {
+  total: usuarios.length,
+  admin: usuarios.filter(u => u.role === 'admin').length,
+  adminSede: usuarios.filter(u => u.role === 'adminSede').length,
+  sede: usuarios.filter(u => u.role === 'sede').length,
+  user: usuarios.filter(u => u.role === 'user').length,
+  userManifiesto: usuarios.filter(u => u.role === 'userManifiesto').length,
+  coordLogistico: usuarios.filter(u => u.role === 'coordLogistico').length,
+  jefeBodega: usuarios.filter(u => u.role === 'jefeBodega').length, // 👈 nuevo
+};
 
   /* ───────────────── CREAR USUARIO ───────────────── */
   const [formCrear, setFormCrear] = useState({
-    username: '', email: '', password: '', confirmPassword: '', role: 'user', sedeNombre: '',
+    username: '', email: '', password: '', confirmPassword: '', role: 'user', sedeNombre: '', bodegaId: '', // 👈 bodegaId
   });
   const [showPasswordCrear, setShowPasswordCrear] = useState(false);
-  const [showConfirmCrear,  setShowConfirmCrear]  = useState(false);
-  const [statusCrear,       setStatusCrear]       = useState(null);
-  const [messageCrear,      setMessageCrear]      = useState('');
+  const [showConfirmCrear, setShowConfirmCrear] = useState(false);
+  const [statusCrear, setStatusCrear] = useState(null);
+  const [messageCrear, setMessageCrear] = useState('');
 
   const handleChangeCrear = (e) => {
     const { name, value } = e.target;
@@ -210,6 +233,7 @@ export default function GestionUsuarios() {
       ...prev,
       [name]: value,
       ...(name === 'role' && value !== 'sede' ? { sedeNombre: '' } : {}),
+      ...(name === 'role' && value !== 'jefeBodega' ? { bodegaId: '' } : {}), // 👈 nuevo
     }));
     setStatusCrear(null);
   };
@@ -235,9 +259,12 @@ export default function GestionUsuarios() {
       setMessageCrear('Debes seleccionar una sede para este rol.');
       return false;
     }
+    if (formCrear.role === 'jefeBodega' && !formCrear.bodegaId) {   // 👈 aquí
+      setMessageCrear('Debes seleccionar una bodega para este rol.');
+      return false;
+    }
     return true;
   };
-
   const handleSubmitCrear = async (e) => {
     e.preventDefault();
     setStatusCrear(null);
@@ -247,17 +274,18 @@ export default function GestionUsuarios() {
     try {
       const token = localStorage.getItem('token');
       const body = {
-        username:   formCrear.username.trim(),
-        email:      formCrear.email.trim().toLowerCase(),
-        password:   formCrear.password,
-        role:       formCrear.role,
+        username: formCrear.username.trim(),
+        email: formCrear.email.trim().toLowerCase(),
+        password: formCrear.password,
+        role: formCrear.role,
         sedeNombre: formCrear.role === 'sede' ? formCrear.sedeNombre : null,
+        bodegaId: formCrear.role === 'jefeBodega' ? formCrear.bodegaId : null,
       };
 
       const res = await fetch(`${API_URL}/auth/register`, {
         method: 'POST',
         headers: {
-          'Content-Type':  'application/json',
+          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify(body),
@@ -268,7 +296,7 @@ export default function GestionUsuarios() {
 
       setStatusCrear('success');
       setMessageCrear(`Usuario "${formCrear.username}" creado como "${ROLE_MAP[formCrear.role]?.label || formCrear.role}" exitosamente.`);
-      setFormCrear({ username: '', email: '', password: '', confirmPassword: '', role: 'user', sedeNombre: '' });
+      setFormCrear({ username: '', email: '', password: '', confirmPassword: '', role: 'user', sedeNombre: '', bodegaId: '' }); // 👈 bodegaId
       cargarUsuarios(); // refresca la lista en segundo plano
 
     } catch (err) {
@@ -281,10 +309,10 @@ export default function GestionUsuarios() {
     const p = formCrear.password;
     if (!p) return 0;
     let score = 0;
-    if (p.length >= 6)          score++;
-    if (p.length >= 10)         score++;
-    if (/[A-Z]/.test(p))        score++;
-    if (/[0-9]/.test(p))        score++;
+    if (p.length >= 6) score++;
+    if (p.length >= 10) score++;
+    if (/[A-Z]/.test(p)) score++;
+    if (/[0-9]/.test(p)) score++;
     if (/[^A-Za-z0-9]/.test(p)) score++;
     return score;
   };
@@ -336,13 +364,14 @@ export default function GestionUsuarios() {
           {/* Stats */}
           <div className={styles.statsRow}>
             {[
-              { label: 'Total',          val: stats.total,          rol: 'todos',          color: '#374151' },
-              { label: 'Administradores',val: stats.admin,          rol: 'admin',          color: '#7c3aed' },
-              { label: 'Admin de Sede',  val: stats.adminSede,      rol: 'adminSede',      color: '#4338ca' },
-              { label: 'Sedes',          val: stats.sede,           rol: 'sede',           color: '#0369a1' },
-              { label: 'Usuarios',       val: stats.user,           rol: 'user',           color: '#059669' },
+              { label: 'Total', val: stats.total, rol: 'todos', color: '#374151' },
+              { label: 'Administradores', val: stats.admin, rol: 'admin', color: '#7c3aed' },
+              { label: 'Admin de Sede', val: stats.adminSede, rol: 'adminSede', color: '#4338ca' },
+              { label: 'Sedes', val: stats.sede, rol: 'sede', color: '#0369a1' },
+              { label: 'Usuarios', val: stats.user, rol: 'user', color: '#059669' },
               { label: 'Op. Manifiesto', val: stats.userManifiesto, rol: 'userManifiesto', color: '#b45309' },
               { label: 'Coord. Logístico', val: stats.coordLogistico, rol: 'coordLogistico', color: '#be185d' },
+              { label: 'Jefes Bodega', val: stats.jefeBodega, rol: 'jefeBodega', color: '#0f766e' },
             ].map(s => (
               <div
                 key={s.label}
@@ -417,7 +446,9 @@ export default function GestionUsuarios() {
                       </td>
                       <td className={styles.emailCell}>{u.email}</td>
                       <td><RolBadge role={u.role} /></td>
-                      <td className={styles.sedeCell}>{u.sedeNombre || <em className={styles.noData}>—</em>}</td>
+                      <td className={styles.sedeCell}>
+                        {u.sedeNombre || u.bodegaId?.nombre || <em className={styles.noData}>—</em>}
+                      </td>
                       <td>
                         {u.isActive !== false
                           ? <span className={styles.badgeActive}><CheckCircle size={11} /> Activo</span>
@@ -426,7 +457,7 @@ export default function GestionUsuarios() {
                       </td>
                       <td className={styles.fechaCell}>
                         {u.createdAt
-                          ? new Date(u.createdAt).toLocaleDateString('es-CO', { day:'2-digit', month:'2-digit', year:'numeric' })
+                          ? new Date(u.createdAt).toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' })
                           : '—'}
                       </td>
                       <td>
@@ -518,6 +549,23 @@ export default function GestionUsuarios() {
               </div>
             )}
 
+            {formCrear.role === 'jefeBodega' && (
+              <div className={styles.field}>
+                <label className={styles.label} htmlFor="bodegaId">Bodega asignada</label>
+                <select
+                  id="bodegaId" name="bodegaId"
+                  className={styles.input}
+                  value={formCrear.bodegaId}
+                  onChange={handleChangeCrear}
+                  disabled={statusCrear === 'loading'}
+                >
+                  <option value="">— Selecciona una bodega —</option>
+                  {bodegas.map(b => (
+                    <option key={b._id} value={b._id}>{b.nombre}</option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div className={styles.field}>
               <label className={styles.label} htmlFor="password">Contraseña</label>
               <div className={styles.passwordWrap}>
@@ -535,7 +583,7 @@ export default function GestionUsuarios() {
               </div>
               {formCrear.password && (
                 <div className={styles.strengthBar}>
-                  {[1,2,3,4,5].map(i => (
+                  {[1, 2, 3, 4, 5].map(i => (
                     <div key={i} className={styles.strengthSegment}
                       style={{ background: i <= strength ? strengthColors[strength] : '#e2e8f0' }} />
                   ))}
@@ -552,11 +600,9 @@ export default function GestionUsuarios() {
                 <input
                   id="confirmPassword" name="confirmPassword"
                   type={showConfirmCrear ? 'text' : 'password'}
-                  className={`${styles.input} ${
-                    formCrear.confirmPassword && formCrear.password !== formCrear.confirmPassword ? styles.inputError   : ''
-                  } ${
-                    formCrear.confirmPassword && formCrear.password === formCrear.confirmPassword ? styles.inputSuccess : ''
-                  }`}
+                  className={`${styles.input} ${formCrear.confirmPassword && formCrear.password !== formCrear.confirmPassword ? styles.inputError : ''
+                    } ${formCrear.confirmPassword && formCrear.password === formCrear.confirmPassword ? styles.inputSuccess : ''
+                    }`}
                   placeholder="Repita la contraseña"
                   value={formCrear.confirmPassword} onChange={handleChangeCrear}
                   disabled={statusCrear === 'loading'} required
@@ -626,6 +672,17 @@ export default function GestionUsuarios() {
                 </div>
               )}
 
+              {formEdit.role === 'jefeBodega' && (
+                <div className={styles.field}>
+                  <label className={styles.label}>Bodega</label>
+                  <select name="bodegaId" className={styles.input}
+                    value={formEdit.bodegaId} onChange={handleEditChange}>
+                    <option value="">— Selecciona —</option>
+                    {bodegas.map(b => <option key={b._id} value={b._id}>{b.nombre}</option>)}
+                  </select>
+                </div>
+              )}
+
               <div className={styles.field}>
                 <label className={styles.label}>Nueva contraseña <span className={styles.optional}>(opcional)</span></label>
                 <div className={styles.passwordWrap}>
@@ -644,10 +701,9 @@ export default function GestionUsuarios() {
                   <label className={styles.label}>Confirmar contraseña</label>
                   <div className={styles.passwordWrap}>
                     <input name="confirmPassword" type={showConfirm ? 'text' : 'password'}
-                      className={`${styles.input} ${
-                        formEdit.confirmPassword && formEdit.newPassword !== formEdit.confirmPassword
-                          ? styles.inputError : ''
-                      }`}
+                      className={`${styles.input} ${formEdit.confirmPassword && formEdit.newPassword !== formEdit.confirmPassword
+                        ? styles.inputError : ''
+                        }`}
                       placeholder="Repite la contraseña"
                       value={formEdit.confirmPassword} onChange={handleEditChange} />
                     <button type="button" className={styles.eyeBtn}
