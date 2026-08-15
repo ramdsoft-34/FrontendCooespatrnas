@@ -383,33 +383,11 @@ export default function MapaRecorrido({
   // Guarda los puntos como objetos {lat,lng,ts,prec} para el map matching.
   const datosRef = useRef([]);
 
-  // ── Calcular ruta por vías cuando cambie el recorrido (sin bucle) ──
-  useEffect(() => {
-    if (recorrido.length < 2) return;
-
-    const claveActual = serializarPuntos(recorrido);
-    if (claveActual === ultimaClaveRef.current) return; // ya calculado para estos puntos
-    ultimaClaveRef.current = claveActual;
-
-    let cancelado = false;
-
-    const calcularRuta = async () => {
-      setCalculandoRuta(true);
-      const rutaVias = datosRef.current
-        .filter(p => Number.isFinite(p.lat) && Number.isFinite(p.lng))
-        .map(p => [p.lat, p.lng]);
-      if (!cancelado) {
-        setRecorridoPorVias(rutaVias); // null si falló → fallback a línea directa
-        setCalculandoRuta(false);
-      }
-    };
-
-    calcularRuta();
-
-    return () => {
-      cancelado = true;
-    };
-  }, [recorrido]);
+  // 🆕 El pegado a vías (OSRM) ahora lo hace el BACKEND en /recorrido
+  // (ver segmentosPorVias más abajo, dentro de cargarRecorrido). Antes
+  // este useEffect solo copiaba los puntos crudos con otro nombre —
+  // nunca llamaba a calcularRutaPorVias — así que se elimina en vez de
+  // dejarlo pisando el valor real que ahora llega del servidor.
 
   // ── Cargar historial del recorrido ──
   const cargarRecorrido = useCallback(async () => {
@@ -446,11 +424,19 @@ export default function MapaRecorrido({
           // una versión vieja sin 'segmentos', se cae a un solo tramo con
           // todo el recorrido — igual que el comportamiento anterior.
           const segmentosBackend = data.data.segmentos || [];
-          setSegmentosRecorrido(
-            segmentosBackend.length > 0
-              ? segmentosBackend
-              : (puntos.length > 0 ? [puntos] : [])
-          );
+          // 🆕 El backend ya intentó pegar cada tramo a las vías reales
+          // (OSRM). Si lo logró para un tramo se dibuja esa línea; si no
+          // (OSRM caído, tramo muy corto, etc.) se usa el tramo crudo de
+          // siempre — ningún tramo se pierde por esto.
+          const segmentosPorViasBackend = data.data.segmentosPorVias || [];
+          const segmentosFinales = segmentosBackend.length > 0
+            ? segmentosBackend.map((seg, i) => {
+                const matched = segmentosPorViasBackend[i];
+                return matched && matched.length >= 2 ? matched : seg;
+              })
+            : (puntos.length > 0 ? [puntos] : []);
+          setSegmentosRecorrido(segmentosFinales);
+          setRecorridoPorVias(!!data.data.huboRutaPorVias);
         }
       } else {
         console.error('Error al cargar recorrido:', res.status);
@@ -506,7 +492,11 @@ export default function MapaRecorrido({
     : [4.570868, -74.297333];
 
   const puntoInicio = recorrido.length > 0 ? recorrido[0] : null;
-  const puntosParaDibujar = recorridoPorVias || recorrido;
+  // 🆕 recorridoPorVias ahora es un booleano (indica si el backend logró
+  // pegar algún tramo a vías), no un array — los puntos para encuadrar el
+  // mapa siempre sales del recorrido crudo, que sigue siendo la fuente de
+  // verdad de las coordenadas.
+  const puntosParaDibujar = recorrido;
 
   const handleRefresh = () => {
     ultimaClaveRef.current = ''; // forzar recálculo de ruta
@@ -863,30 +853,10 @@ export function MapaRecorridoHistorico({
   // Guarda los puntos como objetos {lat,lng,ts,prec} para el map matching.
   const datosRef = useRef([]);
 
-  // ── Calcular ruta por vías (sin bucle) ──
-  useEffect(() => {
-    if (recorrido.length < 2) return;
-
-    const claveActual = serializarPuntos(recorrido);
-    if (claveActual === ultimaClaveRef.current) return;
-    ultimaClaveRef.current = claveActual;
-
-    let cancelado = false;
-
-    const calcularRuta = async () => {
-      setCalculandoRuta(true);
-      const rutaVias = datosRef.current
-        .filter(p => Number.isFinite(p.lat) && Number.isFinite(p.lng))
-        .map(p => [p.lat, p.lng]);
-      if (!cancelado) {
-        setRecorridoPorVias(rutaVias);
-        setCalculandoRuta(false);
-      }
-    };
-
-    calcularRuta();
-    return () => { cancelado = true; };
-  }, [recorrido]);
+  // 🆕 El pegado a vías (OSRM) ahora lo hace el BACKEND en /recorrido
+  // (ver segmentosPorVias más abajo, dentro de cargarRecorrido). Se quita
+  // este useEffect porque solo copiaba los puntos crudos y pisaría el
+  // valor real que ahora llega del servidor.
 
   const cargarRecorrido = useCallback(async () => {
     if (!viajeId) return;
@@ -921,11 +891,18 @@ export function MapaRecorridoHistorico({
           // dibujar, uno por segmento, para nunca unir con línea recta el
           // final de un tramo con el inicio del siguiente.
           const segmentosBackend = data.data.segmentos || [];
-          setSegmentosRecorrido(
-            segmentosBackend.length > 0
-              ? segmentosBackend
-              : (puntos.length > 0 ? [puntos] : [])
-          );
+          // 🆕 Igual que en el mapa en tiempo real: si el backend logró
+          // pegar un tramo a vías (OSRM), se dibuja esa línea; si no, se
+          // usa el tramo crudo de siempre — ningún tramo se pierde.
+          const segmentosPorViasBackend = data.data.segmentosPorVias || [];
+          const segmentosFinales = segmentosBackend.length > 0
+            ? segmentosBackend.map((seg, i) => {
+                const matched = segmentosPorViasBackend[i];
+                return matched && matched.length >= 2 ? matched : seg;
+              })
+            : (puntos.length > 0 ? [puntos] : []);
+          setSegmentosRecorrido(segmentosFinales);
+          setRecorridoPorVias(!!data.data.huboRutaPorVias);
         }
       } else {
         setError('No se encontró el recorrido de este viaje');
@@ -978,7 +955,11 @@ export function MapaRecorridoHistorico({
   const centroMapa = calcularCentro();
   const puntoInicio = recorrido.length > 0 ? recorrido[0] : null;
   const puntoFin = recorrido.length > 0 ? recorrido[recorrido.length - 1] : null;
-  const puntosParaDibujar = recorridoPorVias || recorrido;
+  // 🆕 recorridoPorVias ahora es un booleano (indica si el backend logró
+  // pegar algún tramo a vías), no un array — los puntos para encuadrar el
+  // mapa siempre sales del recorrido crudo, que sigue siendo la fuente de
+  // verdad de las coordenadas.
+  const puntosParaDibujar = recorrido;
 
   const formatearDistancia = (metros) => {
     if (!metros) return '0 m';
