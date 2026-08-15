@@ -1070,7 +1070,7 @@ export function MapaRecorridoHistorico({
           {recorridoPorVias && !calculandoRuta && (
             <div
               className={styles.liveBadge}
-              style={{ background: 'rgba(255,255,255,0.25)' }}
+              style={{ background: 'rgba(168, 158, 158, 0.25)' }}
             >
               <Zap size={12} />
               POR VÍAS
