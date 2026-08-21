@@ -1,4 +1,3 @@
-
 const ENCABEZADO_URL = `${window.location.origin}/checklist_encabezado.png`;
 const MARCA_AGUA_URL = `${window.location.origin}/checklist_marca_agua.jpg`;
 
@@ -601,26 +600,35 @@ export const descargarChecklistPDF = async (conductor, checklistDetalle, mostrar
     </style>`;
 
   try {
-    // Consulta del historial de checklists del conductor.
-    let crudos = [];
-    try {
-      const res = await fetch(URL_HISTORIAL(conductor._id));
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success && Array.isArray(data.data)) crudos = data.data;
-      }
-    } catch (_) { }
-    if (crudos.length === 0 && checklistDetalle) crudos = [checklistDetalle];
+    // Selección del checklist a imprimir.
+    //
+    // IMPORTANTE: si el llamador ya indicó UN checklist concreto (p. ej. el
+    // que el usuario eligió en el selector "Descargar por fecha"), ese es el
+    // que se debe imprimir, TAL CUAL, sin volver a consultarlo ni sustituirlo
+    // por otro. Antes, aquí se volvía a pedir todo el historial y siempre se
+    // tomaba el más reciente (historial[0]), lo que hacía que un checklist
+    // vencido se descargara con la fecha del checklist más nuevo del chofer.
+    let c;
+    if (checklistDetalle) {
+      c = normalizar(checklistDetalle);
+    } else {
+      // Sin checklist específico: comportamiento por defecto = el más reciente.
+      let crudos = [];
+      try {
+        const res = await fetch(URL_HISTORIAL(conductor._id));
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && Array.isArray(data.data)) crudos = data.data;
+        }
+      } catch (_) { }
+      const historial = crudos.map(normalizar).filter(Boolean);
+      c = historial[0] || null;
+    }
 
-    const historial = crudos.map(normalizar).filter(Boolean);
-    if (historial.length === 0) {
+    if (!c) {
       mostrarAlerta?.('Sin checklists', 'Este conductor no tiene checklists registrados.', 'info');
       return;
     }
-
-    // Solo el checklist MÁS RECIENTE. El historial ya viene ordenado del más
-    // nuevo al más antiguo desde el backend; tomamos el primero.
-    const c = historial[0];
 
     const fmt = (f) => f ? new Date(f).toLocaleDateString('es-CO',
       { year: 'numeric', month: 'long', day: 'numeric' }) : '—';
