@@ -7,13 +7,14 @@ import {
   LogOut,
   Menu,
   X,
-  Shield,FileText, MapPin,
+  Shield,FileText, MapPin, BookOpen,
 } from 'lucide-react';
 import styles from './AdminDashboard.module.css';
 import Modal from '../components/Modal';
 import ManifiestoCorreo from '../admin/ManifiestoCorreo'; 
 import GestionUsuarios from '../admin/GestionUsuarios';
 import GestionSedes from '../admin/GestionSedes'; 
+import GestionManual from '../admin/GestionManual';
 
 export default function AdminDashboard({ user, onLogout }) {
   const [active, setActive] = useState('panel');
@@ -26,7 +27,8 @@ export default function AdminDashboard({ user, onLogout }) {
     { id: 'panel',        label: 'Panel',        icon: LayoutDashboard },
     { id: 'usuarios',     label: 'Usuarios',      icon: Users           },
     { id: 'manifiestos', label: 'Manifiestos', icon: FileText },
-    { id: 'sedes',        label: 'Sedes',         icon: MapPin          }, 
+    { id: 'sedes',        label: 'Sedes',         icon: MapPin          },
+    { id: 'manual',       label: 'Manual de Usuario', icon: BookOpen },
   ];
 
   const renderSection = () => {
@@ -35,6 +37,7 @@ export default function AdminDashboard({ user, onLogout }) {
       case 'manifiestos': return <ManifiestoCorreo />;
       case 'usuarios': return <GestionUsuarios />;
       case 'sedes': return <GestionSedes />;
+      case 'manual': return <GestionManual />;
       default:             return <div />;
     }
   };

@@ -1,5 +1,5 @@
 // frontend/src/components/MapaRecorrido.js
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { MapContainer, TileLayer, Polyline, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -390,6 +390,12 @@ export default function MapaRecorrido({
   // dejarlo pisando el valor real que ahora llega del servidor.
 
   // ── Cargar historial del recorrido ──
+  // 🚀 OPTIMIZACIÓN: antes esto llamaba a setRecorrido/setSegmentosRecorrido
+  // en CADA poll (cada 15s), aunque el chofer no se hubiera movido. Como
+  // setState siempre crea un array NUEVO, eso disparaba de nuevo
+  // AjustarAlRecorrido (fitBounds) y volvía a pintar el mapa sin necesidad.
+  // Ahora se compara contra la última clave conocida (serializarPuntos) y
+  // solo se actualiza el estado cuando el recorrido realmente cambió.
   const cargarRecorrido = useCallback(async () => {
     if (!viajeId) return;
     setCargandoRecorrido(true);
@@ -412,31 +418,53 @@ export default function MapaRecorrido({
             ts: Number.isFinite(tss[i]) ? tss[i] : undefined,
             prec: precs[i] || 0,
           }));
-          setRecorrido(puntos);
-          setEstadisticas({
-            distanciaTotal: data.data.distanciaTotal || 0,
-            cantidadPuntos: data.data.cantidadPuntos || 0,
-            activo: data.data.activo,
+
+          const claveNueva = serializarPuntos(puntos);
+          const huboCambioDePuntos = claveNueva !== ultimaClaveRef.current;
+          ultimaClaveRef.current = claveNueva;
+
+          // Solo se toca el estado (y por lo tanto solo se vuelve a pintar
+          // el mapa / recalcular fitBounds) si el recorrido realmente
+          // trajo puntos nuevos o distintos.
+          if (huboCambioDePuntos) {
+            setRecorrido(puntos);
+          }
+
+          setEstadisticas((prev) => {
+            const nuevo = {
+              ...prev,
+              distanciaTotal: data.data.distanciaTotal || 0,
+              cantidadPuntos: data.data.cantidadPuntos || 0,
+              activo: data.data.activo,
+            };
+            const sinCambios =
+              prev.distanciaTotal === nuevo.distanciaTotal &&
+              prev.cantidadPuntos === nuevo.cantidadPuntos &&
+              prev.activo === nuevo.activo;
+            return sinCambios ? prev : nuevo; // mantiene la misma referencia si no cambió nada
           });
-          // 🆕 Tramos ya listos para dibujar: uno por segmento, para nunca
-          // unir con línea recta el final de un tramo con el inicio del
-          // siguiente (hueco de señal, app cerrada, túnel). Si el backend es
-          // una versión vieja sin 'segmentos', se cae a un solo tramo con
-          // todo el recorrido — igual que el comportamiento anterior.
-          const segmentosBackend = data.data.segmentos || [];
-          // 🆕 El backend ya intentó pegar cada tramo a las vías reales
-          // (OSRM). Si lo logró para un tramo se dibuja esa línea; si no
-          // (OSRM caído, tramo muy corto, etc.) se usa el tramo crudo de
-          // siempre — ningún tramo se pierde por esto.
-          const segmentosPorViasBackend = data.data.segmentosPorVias || [];
-          const segmentosFinales = segmentosBackend.length > 0
-            ? segmentosBackend.map((seg, i) => {
-                const matched = segmentosPorViasBackend[i];
-                return matched && matched.length >= 2 ? matched : seg;
-              })
-            : (puntos.length > 0 ? [puntos] : []);
-          setSegmentosRecorrido(segmentosFinales);
-          setRecorridoPorVias(!!data.data.huboRutaPorVias);
+
+          if (huboCambioDePuntos) {
+            // 🆕 Tramos ya listos para dibujar: uno por segmento, para nunca
+            // unir con línea recta el final de un tramo con el inicio del
+            // siguiente (hueco de señal, app cerrada, túnel). Si el backend es
+            // una versión vieja sin 'segmentos', se cae a un solo tramo con
+            // todo el recorrido — igual que el comportamiento anterior.
+            const segmentosBackend = data.data.segmentos || [];
+            // 🆕 El backend ya intentó pegar cada tramo a las vías reales
+            // (OSRM). Si lo logró para un tramo se dibuja esa línea; si no
+            // (OSRM caído, tramo muy corto, etc.) se usa el tramo crudo de
+            // siempre — ningún tramo se pierde por esto.
+            const segmentosPorViasBackend = data.data.segmentosPorVias || [];
+            const segmentosFinales = segmentosBackend.length > 0
+              ? segmentosBackend.map((seg, i) => {
+                  const matched = segmentosPorViasBackend[i];
+                  return matched && matched.length >= 2 ? matched : seg;
+                })
+              : (puntos.length > 0 ? [puntos] : []);
+            setSegmentosRecorrido(segmentosFinales);
+            setRecorridoPorVias(!!data.data.huboRutaPorVias);
+          }
         }
       } else {
         console.error('Error al cargar recorrido:', res.status);
@@ -490,6 +518,19 @@ export default function MapaRecorrido({
     : recorrido.length > 0
     ? recorrido[recorrido.length - 1]
     : [4.570868, -74.297333];
+
+  // 🚀 OPTIMIZACIÓN: antes se creaba un array [] NUEVO en cada render para
+  // <CentrarMapa centro={...}/>, así que su useEffect (dependencia por
+  // referencia) se disparaba SIEMPRE que el padre volvía a renderizar
+  // (por ejemplo cada 10s cuando llega una nueva ubicación del chofer),
+  // llamando a map.setView() aunque el chofer no se hubiera movido ni un
+  // metro — eso es lo que se sentía como "el mapa se recarga solo".
+  // Con useMemo, el array solo cambia cuando cambian de verdad la latitud
+  // o la longitud.
+  const centroChofer = useMemo(
+    () => (ubicacionActual ? [ubicacionActual.latitud, ubicacionActual.longitud] : null),
+    [ubicacionActual?.latitud, ubicacionActual?.longitud]
+  );
 
   const puntoInicio = recorrido.length > 0 ? recorrido[0] : null;
   // 🆕 recorridoPorVias ahora es un booleano (indica si el backend logró
@@ -705,10 +746,8 @@ export default function MapaRecorrido({
             </Marker>
           )}
 
-          {centrarEnChofer && ubicacionActual && (
-            <CentrarMapa
-              centro={[ubicacionActual.latitud, ubicacionActual.longitud]}
-            />
+          {centrarEnChofer && centroChofer && (
+            <CentrarMapa centro={centroChofer} />
           )}
         </MapContainer>
 

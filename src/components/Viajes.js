@@ -179,24 +179,46 @@ export default function Viajes({ bodegaId } = {}) {
   // ─────────────────────────────────────────────────────────
   // Tracking ubicación
   // ─────────────────────────────────────────────────────────
-  const cargarUbicacionChofer = async (viajeId) => {
-    setCargandoUbicacion(true);
+  // 🚀 OPTIMIZACIÓN: [silencioso] evita que el "cargando" parpadee cada 10s
+  // en los polls de fondo (antes alternaba true/false en cada llamada,
+  // aunque nada hubiera cambiado). Solo se muestra el loading en la carga
+  // inicial o cuando el usuario pulsa "refrescar" manualmente.
+  const cargarUbicacionChofer = async (viajeId, { silencioso = false } = {}) => {
+    if (!silencioso) setCargandoUbicacion(true);
     try {
       const res = await fetch(`${API_BACKEND}/ubicacion/viaje/${viajeId}`);
       if (res.ok) {
         const data = await res.json();
-        setUbicacionChofer(data.success && data.data ? data.data : null);
+        const nuevaUbicacion = data.success && data.data ? data.data : null;
+        // Evita reemplazar el objeto (y disparar renders/effects en cascada
+        // en el mapa) cuando el chofer no se ha movido ni cambió de estado.
+        setUbicacionChofer((prev) => {
+          if (!prev && !nuevaUbicacion) return prev;
+          if (
+            prev && nuevaUbicacion &&
+            prev.latitud === nuevaUbicacion.latitud &&
+            prev.longitud === nuevaUbicacion.longitud &&
+            prev.estadoConexion === nuevaUbicacion.estadoConexion &&
+            prev.velocidad === nuevaUbicacion.velocidad
+          ) {
+            return prev;
+          }
+          return nuevaUbicacion;
+        });
         setUbicacionActiva(!!(data.success && data.data?.esReciente));
         setEstadoConexion(data.success && data.data ? data.data.estadoConexion : null); // 🆕
       }
     } catch { }
-    finally { setCargandoUbicacion(false); }
+    finally { if (!silencioso) setCargandoUbicacion(false); }
   };
 
   const iniciarMonitoreoUbicacion = (viajeId) => {
     cargarUbicacionChofer(viajeId);
     clearInterval(intervalUbicacionRef.current);
-    intervalUbicacionRef.current = setInterval(() => cargarUbicacionChofer(viajeId), 10000);
+    intervalUbicacionRef.current = setInterval(
+      () => cargarUbicacionChofer(viajeId, { silencioso: true }),
+      10000
+    );
   };
 
   const detenerMonitoreoUbicacion = () => {
@@ -644,6 +666,19 @@ export default function Viajes({ bodegaId } = {}) {
                   <div>
                     <h4>Valor del Flete</h4>
                     <p>{formatearPesos(viajeSeleccionado.valorFlete)}</p>
+                  </div>
+                </div>
+              )}
+
+              {viajeSeleccionado.anticipo > 0 && (
+                <div className={styles.headerInfoCard} style={{ background: '#fff7ed', border: '1.5px solid #fdba74' }}>
+                  <Wallet size={20} style={{ color: '#ea580c' }} />
+                  <div>
+                    <h4>Anticipo Entregado</h4>
+                    <p>{formatearPesos(viajeSeleccionado.anticipo)}</p>
+                    <p style={{ fontSize: '0.75rem', color: '#9ca3af', margin: 0 }}>
+                      Saldo: {formatearPesos(viajeSeleccionado.valorFlete - viajeSeleccionado.anticipo)}
+                    </p>
                   </div>
                 </div>
               )}
@@ -1268,6 +1303,11 @@ export default function Viajes({ bodegaId } = {}) {
                   {viaje.valorFlete && (
                     <div className={styles.metric}><CreditCard size={12} /><span>{formatearPesos(viaje.valorFlete)}</span></div>
                   )}
+                  {viaje.anticipo > 0 && (
+                    <div className={styles.metric} style={{ color: '#ea580c' }}>
+                      <Wallet size={12} /><span>Anticipo: {formatearPesos(viaje.anticipo)}</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1308,6 +1348,11 @@ export default function Viajes({ bodegaId } = {}) {
               </div>
               <div className={styles.listCell}>
                 {viaje.valorFlete ? formatearPesos(viaje.valorFlete) : <span style={{ color: '#9ca3af' }}>N/A</span>}
+                {viaje.anticipo > 0 && (
+                  <div style={{ fontSize: '0.7rem', color: '#ea580c', marginTop: 2 }}>
+                    Anticipo: {formatearPesos(viaje.anticipo)}
+                  </div>
+                )}
               </div>
               <div className={styles.listCell}>
                 <div

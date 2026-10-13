@@ -11,6 +11,7 @@ import CoordLogisticoDashboard from './pages/CoordLogisticoDashboard';
 import ManifiestoPage from './pages/ManifiestoPage';
 import PrivacidadAPP from './pages/PrivacidadAPP';
 import JefeBodegaDashboard from './pages/JefeBodegaDashboard';
+import ManualUsuario from './pages/ManualUsuario';
 import './App.css';
 
 function routeForRole(role) {
@@ -39,6 +40,12 @@ function App() {
         <Route path="/manifiestos"    element={<ManifiestoWrapper />} />
         <Route path="/privacidadAPP"  element={<PrivacidadAPP />} />
         <Route path="/jefeBodega" element={<JefeBodegaWrapper />} />
+        {/* Manual de usuario: público, solo lectura, sin login.
+            /manual elige cuál ver; /manual/web y /manual/app son cada
+            manual por separado (nunca se mezclan). La gestión (crear,
+            editar, eliminar) vive dentro del panel de Admin. */}
+        <Route path="/manual" element={<ManualUsuario />} />
+        <Route path="/manual/:tipo" element={<ManualUsuario />} />
         <Route path="*"               element={<Navigate to="/" />} />
       </Routes>
     </div>

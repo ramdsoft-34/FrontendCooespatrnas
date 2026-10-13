@@ -31,6 +31,7 @@ export default function Bodegas() {
   const [error, setError] = useState('');
   const [codigoViaje, setCodigoViaje] = useState('');
   const [valorFlete, setValorFlete] = useState('');
+  const [anticipo, setAnticipo] = useState('');
   const [mostrarModalFlete, setMostrarModalFlete] = useState(false);
   const [mostrarResumenViaje, setMostrarResumenViaje] = useState(false);
 
@@ -98,13 +99,42 @@ export default function Bodegas() {
     }).format(Number(valor));
   };
 
+  // 🐛→✅ FIX: antes se quitaban los puntos (.replace(...\.)) ANTES de
+  // revisar los sufijos "m"/"k"/"millón". Eso rompía atajos con decimales:
+  // "1.5m" perdía el punto y quedaba "15m" → se multiplicaba por 10 (¡1.5
+  // millones se convertía en 15 millones!). Eso disparaba después el error
+  // "el anticipo no puede ser mayor al flete" con valores que en realidad
+  // eran válidos. Ahora se detecta el sufijo primero (sin tocar el punto
+  // decimal) y solo se eliminan los puntos cuando de verdad son
+  // separadores de miles (más de uno, o uno solo seguido de 3 dígitos).
   const parseFlete = (texto) => {
     if (!texto) return 0;
-    let val = texto.toString().toLowerCase().replace(/[\$\s,\.]/g, '');
-    if (val.includes('millon') || val.includes('millón'))
-      return (parseFloat(val.replace(/millon.*|millón.*/g, '')) || 1) * 1000000;
-    if (val.endsWith('m')) return (parseFloat(val) || 1) * 1000000;
-    if (val.includes('k')) return (parseFloat(val.replace('k', '')) || 1) * 1000;
+    let val = texto.toString().toLowerCase().trim().replace(/[\$\s,]/g, '');
+
+    if (val.includes('millon') || val.includes('millón')) {
+      const numero = val.replace(/millon.*|millón.*/g, '');
+      return (parseFloat(numero) || 1) * 1000000;
+    }
+    if (/^\d+(\.\d+)?m$/.test(val)) {
+      return (parseFloat(val.slice(0, -1)) || 1) * 1000000;
+    }
+    if (/^\d+(\.\d+)?k$/.test(val)) {
+      return (parseFloat(val.slice(0, -1)) || 1) * 1000;
+    }
+
+    // Sin sufijo: número plano, posiblemente con puntos de miles (150.000
+    // o 150.000.000). Si hay más de un punto, o uno solo seguido de
+    // exactamente 3 dígitos, se interpreta como separador de miles y se
+    // elimina; si no, se asume un decimal real (ej: 150.5) y se conserva.
+    const cantidadPuntos = (val.match(/\./g) || []).length;
+    if (cantidadPuntos > 1) {
+      val = val.replace(/\./g, '');
+    } else if (cantidadPuntos === 1) {
+      const partes = val.split('.');
+      if (partes[1] && partes[1].length === 3) {
+        val = val.replace('.', '');
+      }
+    }
     return parseFloat(val) || 0;
   };
 
@@ -381,10 +411,26 @@ export default function Bodegas() {
     cargarChoferes();
   };
 
+  // Tope razonable para el flete/anticipo: evita valores absurdos (por
+  // typo o dato de prueba) que después rompen el formato en cascada en el
+  // panel, la app del conductor y el PDF del reporte. $999.999.999.999
+  // (casi un billón de pesos) ya es muchísimo más de lo que vale cualquier
+  // flete real, así que deja margen de sobra sin limitar casos legítimos.
+  const MAX_VALOR_FLETE = 999999999999;
+
   const continuarAResumen = () => {
     const valorNumerico = parseFlete(valorFlete);
     if (!valorFlete || valorNumerico <= 0) {
       mostrarAlerta('Valor inválido', 'Ingresa un valor de flete válido', 'warning', 'primary');
+      return;
+    }
+    if (valorNumerico > MAX_VALOR_FLETE) {
+      mostrarAlerta('Valor demasiado alto', 'El valor del flete es demasiado grande. Verifica que no tenga dígitos de más.', 'warning', 'primary');
+      return;
+    }
+    const anticipoNumerico = parseFlete(anticipo);
+    if (anticipo && anticipoNumerico > valorNumerico) {
+      mostrarAlerta('Anticipo inválido', 'El anticipo no puede ser mayor al valor del flete', 'warning', 'primary');
       return;
     }
     if (!conductorSeleccionado) {
@@ -400,6 +446,7 @@ export default function Bodegas() {
   const cancelarModalFlete = () => {
     setMostrarModalFlete(false);
     setValorFlete('');
+    setAnticipo('');
     setConductorSeleccionado(null);
     setBusquedaConductor('');
   };
@@ -407,6 +454,7 @@ export default function Bodegas() {
   const cancelarResumenViaje = () => {
     setMostrarResumenViaje(false);
     setValorFlete('');
+    setAnticipo('');
     setConductorSeleccionado(null);
   }; const ordenEstado = (c) => {
     const realmente = c.disponible && c.perfilCompleto === true && c.checklistActivo === true;
@@ -420,6 +468,7 @@ export default function Bodegas() {
 
   const confirmarGenerarViaje = async () => {
     const valorNumerico = parseFlete(valorFlete);
+    const anticipoNumerico = parseFlete(anticipo);
     const codigoPlanilla = planillaSeleccionada?.numeroPlanilla || obtenerCodigoViaje();
     try {
       const res = await authFetch(`${API_BASE}/viajes/crear`, {
@@ -429,6 +478,7 @@ export default function Bodegas() {
           bodegaId: bodegaSeleccionada._id,
           clientes: clientes.map(c => c._id),
           valorFlete: valorNumerico,
+          anticipo: anticipoNumerico,
           numeroPlanilla: codigoPlanilla,
           choferId: conductorSeleccionado._id,
         }),
@@ -437,12 +487,13 @@ export default function Bodegas() {
       if (res.ok) {
         mostrarAlerta(
           '¡Viaje generado!',
-          `Planilla: ${data.codigo} — Asignado a ${conductorSeleccionado.nombre}\nFlete: ${formatCOPDetallado(valorNumerico)}`,
+          `Planilla: ${data.codigo} — Asignado a ${conductorSeleccionado.nombre}\nFlete: ${formatCOPDetallado(valorNumerico)}${anticipoNumerico > 0 ? `\nAnticipo: ${formatCOPDetallado(anticipoNumerico)}` : ''}`,
           'success', 'success'
         );
         setCodigoViaje(data.codigo);
         setMostrarResumenViaje(false);
         setValorFlete('');
+        setAnticipo('');
         setConductorSeleccionado(null);
         // La planilla ya quedó asignada → volver a la lista; desaparece de pendientes.
         await volverAPlanillas();
@@ -756,7 +807,7 @@ export default function Bodegas() {
       gap: 20, overflowY: 'auto', flex: 1,
     },
     planillaStrip: {
-      display: 'flex', alignItems: 'center', gap: 12,
+      display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
       padding: '12px 16px', background: '#ede9fe',
       borderRadius: 10, border: '1px solid #c4b5fd',
     },
@@ -768,8 +819,11 @@ export default function Bodegas() {
       fontSize: 11, color: '#7c3aed', fontWeight: 600,
       textTransform: 'uppercase', letterSpacing: '.4px'
     },
-    planillaNum: { fontSize: 18, fontWeight: 700, color: '#4c1d95', lineHeight: 1.2 },
-    planillaSub: { fontSize: 11, color: '#7c3aed', marginLeft: 'auto', fontStyle: 'italic' },
+    planillaNum: {
+      fontSize: 18, fontWeight: 700, color: '#4c1d95', lineHeight: 1.3,
+      wordBreak: 'break-word', overflowWrap: 'anywhere', // 🐛→✅ evita que una planilla larga rompa el layout
+    },
+    planillaSub: { fontSize: 11, color: '#7c3aed', marginLeft: 'auto', fontStyle: 'italic', flexShrink: 0 },
     twoCol: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 },
     fieldLabel: {
       fontSize: 11, fontWeight: 700, color: '#374151',
@@ -874,6 +928,7 @@ export default function Bodegas() {
   };
 
   const fleteNumerico = parseFlete(valorFlete);
+  const anticipoNumerico = parseFlete(anticipo);
   const puedeContin = fleteNumerico > 0 && !!conductorSeleccionado;
   const todasLasPlanillas = obtenerPlanillas();
   const codigoPlanilla = obtenerCodigoViaje();
@@ -1272,7 +1327,7 @@ export default function Bodegas() {
                 <div style={S.planillaIconWrap}>
                   <FileText size={18} color="#4c1d95" />
                 </div>
-                <div>
+                <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={S.planillaLabel}>Número de planilla</div>
                   <div style={S.planillaNum}>
                     {todasLasPlanillas.length > 0
@@ -1302,6 +1357,31 @@ export default function Bodegas() {
                 {fleteNumerico > 0 && (
                   <div style={S.fleteConverted}>
                     Equivale a: <strong>{formatCOP(fleteNumerico)}</strong>
+                  </div>
+                )}
+              </div>
+
+              {/* Anticipo */}
+              <div>
+                <label style={S.fieldLabel}>Anticipo entregado al conductor (COP)</label>
+                <div style={S.fleteWrap}>
+                  <span style={S.fletePrefix}>$</span>
+                  <input
+                    type="text"
+                    value={anticipo}
+                    onChange={e => setAnticipo(e.target.value)}
+                    placeholder='Opcional · 50.000 · 1 millón · 1.5m'
+                    style={S.fleteInput}
+                    onFocus={e => e.target.style.borderColor = '#639922'}
+                    onBlur={e => e.target.style.borderColor = '#e5e7eb'}
+                  />
+                </div>
+                {anticipoNumerico > 0 && (
+                  <div style={S.fleteConverted}>
+                    Equivale a: <strong>{formatCOP(anticipoNumerico)}</strong>
+                    {anticipoNumerico > fleteNumerico && fleteNumerico > 0 && (
+                      <span style={{ color: '#dc2626', marginLeft: 8 }}>⚠ Supera el valor del flete</span>
+                    )}
                   </div>
                 )}
               </div>
@@ -1550,6 +1630,20 @@ export default function Bodegas() {
                     </div>
                     <p style={{ fontSize: '1.15rem', fontWeight: 700, color: '#1d4ed8', margin: '0 0 0 1.5rem' }}>{formatCOPDetallado(valorFleteNumerico)}</p>
                   </div>
+
+                  {/* Anticipo */}
+                  {anticipoNumerico > 0 && (
+                    <div style={{ padding: '1rem', background: '#fff7ed', borderRadius: 10, border: '1.5px solid #fdba74' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '.4rem', marginBottom: 4 }}>
+                        <DollarSign size={15} color="#ea580c" />
+                        <strong style={{ color: '#c2410c', fontSize: '.8rem', textTransform: 'uppercase', letterSpacing: '.5px' }}>Anticipo Entregado</strong>
+                      </div>
+                      <p style={{ fontSize: '1.15rem', fontWeight: 700, color: '#9a3412', margin: '0 0 0 1.5rem' }}>{formatCOPDetallado(anticipoNumerico)}</p>
+                      <small style={{ color: '#6b7280', fontSize: '.72rem', marginLeft: '1.5rem', display: 'block', marginTop: 2 }}>
+                        Saldo pendiente del flete: <strong>{formatCOPDetallado(valorFleteNumerico - anticipoNumerico)}</strong>
+                      </small>
+                    </div>
+                  )}
 
                   {/* Total a recibir */}
                   <div style={{ padding: '1.1rem', background: '#f0fdf4', borderRadius: 10, border: '2px solid #22c55e' }}>
