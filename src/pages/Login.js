@@ -31,7 +31,7 @@ const Login = ({ onLoginSuccess }) => {
 
   try {
     // ── 1. Login principal (planillas) ──────────────────────
-    const response = await fetch('https://api.cooespatrans.com/api/auth/login', {
+    const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://api.cooespatrans.com/api'}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(formData),

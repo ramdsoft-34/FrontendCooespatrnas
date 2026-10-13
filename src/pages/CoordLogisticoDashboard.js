@@ -19,6 +19,10 @@ import {
   UserCog,
   ClipboardList,
   MessageSquare,
+  NotebookPen,
+  Receipt,
+  FileCheck2,
+  Database,
 } from 'lucide-react';
 import styles from './Dashboard.module.css';
 
@@ -35,6 +39,12 @@ import Modal from '../components/Modal';
 import { SeguimientoPlanillas } from './AdminSedeDashboard';
 import GestionManifiestos from '../admin/GestionManifiestos';
 import ChatMessenger from './ChatMessenger';
+
+// Módulos de logística (trasladados de la plantilla de viajes en Excel)
+import BitacoraViajes from '../logistica/BitacoraViajes';
+import RelacionFletes from '../logistica/RelacionFletes';
+import RndcDespacho from '../logistica/RndcDespacho';
+import MaestrosLogistica from '../logistica/MaestrosLogistica';
 
 export default function CoordLogisticoDashboard({ user, onLogout }) {
   const [active, setActive] = useState('panel');
@@ -55,6 +65,11 @@ export default function CoordLogisticoDashboard({ user, onLogout }) {
     { id: 'seguimiento',  label: 'Seguimiento',  icon: ClipboardList },
     { id: 'manifiestos',  label: 'Manifiestos',  icon: FileText },
     { id: 'mensajes',     label: 'Mensajes',     icon: MessageSquare },
+    // ── Logística (plantilla de viajes) ────────────────────────
+    { id: 'bitacora',     label: 'Bitácora',        icon: NotebookPen },
+    { id: 'relacion',     label: 'Relación fletes', icon: Receipt },
+    { id: 'rndc',         label: 'RNDC',            icon: FileCheck2 },
+    { id: 'maestros',     label: 'Maestros',        icon: Database },
   ];
 
   const renderSection = () => {
@@ -68,6 +83,10 @@ export default function CoordLogisticoDashboard({ user, onLogout }) {
       case 'seguimiento':  return <SeguimientoPlanillas user={user} />;
       case 'manifiestos':  return <GestionManifiestos user={user} />;
       case 'mensajes':     return <ChatMessenger user={user} />;
+      case 'bitacora':     return <BitacoraViajes />;
+      case 'relacion':     return <RelacionFletes />;
+      case 'rndc':         return <RndcDespacho />;
+      case 'maestros':     return <MaestrosLogistica />;
       default:             return <Panel user={user} />;
     }
   };

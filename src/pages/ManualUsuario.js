@@ -17,7 +17,7 @@ import styles from './ManualUsuario.module.css';
 import {
   BookOpen, ChevronDown, ChevronLeft, Truck, Warehouse, Users, MapPin,
   FileText, MessageCircle, BarChart3, UserCog, Settings, Loader2,
-  PlayCircle, Monitor, Smartphone,
+  PlayCircle, Monitor, Smartphone, NotebookPen, Receipt, FileCheck2, Database,
 } from 'lucide-react';
 
 const API_BASE = 'https://api.cooespatrans.com/api';
@@ -25,7 +25,7 @@ const UPLOADS_BASE = 'https://api.cooespatrans.com';
 
 const ICONOS = {
   BookOpen, Truck, Warehouse, Users, MapPin, FileText, MessageCircle,
-  BarChart3, UserCog, Settings, Monitor, Smartphone,
+  BarChart3, UserCog, Settings, Monitor, Smartphone, NotebookPen, Receipt, FileCheck2, Database,
 };
 
 function IconoSeccion({ nombre, size = 20 }) {
